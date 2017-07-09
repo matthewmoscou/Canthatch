@@ -1,8 +1,26 @@
+   * [Canthatch](#canthatch)
+      * [Defining the genetic interval encompassing <em>Srs1</em>](#defining-the-genetic-interval-encompassing-srs1)
+         * [<em>De novo</em> assembly of Canthatch, NS1, and NS2 flow sorted chromosome arm 7DL reads](#de-novo-assembly-of-canthatch-ns1-and-ns2-flow-sorted-chromosome-arm-7dl-reads)
+         * [Identification of EMS generated SNPs in NS1 and NS2 relative to Canthatch](#identification-of-ems-generated-snps-in-ns1-and-ns2-relative-to-canthatch)
+         * [Anchoring of genomic contigs onto the NRGene assembly of chromosome 7D](#anchoring-of-genomic-contigs-onto-the-nrgene-assembly-of-chromosome-7d)
+         * [Annotation of leaf expressed genes on <em>de novo</em> Canthatch assembly](#annotation-of-leaf-expressed-genes-on-de-novo-canthatch-assembly)
+         * [Analysis to merge multiple data sources to identify non-synonymous SNPs between Canthatch and mutants](#analysis-to-merge-multiple-data-sources-to-identify-non-synonymous-snps-between-canthatch-and-mutants)
+      * [High strigency alignment of Canthatch, NS1, and NS2 flow sorted chromosome arm reads to <em>Srs</em> region](#high-strigency-alignment-of-canthatch-ns1-and-ns2-flow-sorted-chromosome-arm-reads-to-srs-region)
+      * [Realignment of Canthatch, NS1, and NS2 flow sorted chromosome arm reads to Canthatch converted <em>Srs</em> region](#realignment-of-canthatch-ns1-and-ns2-flow-sorted-chromosome-arm-reads-to-canthatch-converted-srs-region)
+         * [Conversion of the <em>Srs</em> region from the Chinese Spring haplotype to the Canthatch haplotype](#conversion-of-the-srs-region-from-the-chinese-spring-haplotype-to-the-canthatch-haplotype)
+      * [Gene expression of the homeologous <em>Med15a</em> gene family](#gene-expression-of-the-homeologous-med15a-gene-family)
+         * [Does loss of <em>Srs1</em> lead to increased expression of <em>Lr34</em>?](#does-loss-of-srs1-lead-to-increased-expression-of-lr34)
+      * [<em>Lr34</em>](#lr34)
+
+
 # Canthatch
 In 1980, Kerber and Green identified the presence of a suppressor of resistance in wheat to wheat stem rust (*Puccinia graminis* f. sp. *tritici*). Kerber and Green (1980) mapped the suppression to chromosome 7D, and Kerber (1991) established that a single locus conferred suppression on chromosome 7D. We set out to identify the suppressor gene in Canthatch by applying chromosome flow sorting and high throughput sequencing to Canthatch and two EMS-derived mutants.
 
-## *De novo* assembly of Canthatch, NS1, and NS2 flow sorted chromosome arm 7DL reads
-Initially, we used high stringency parameters in `Trimmomatic` to identify high quality reads.
+## Defining the genetic interval encompassing *Srs1*
+Our initial approach was to identify SNPs along the long arm of chromosome 7D in order to develop SNP markers that will be applied to the Canthatch x NS1 and Canthatch x NS2 doubled-haploid mapping populations. We use an approach that makes use of multiple data sets including *de novo* assembly of flow sorted chromosomes of Canthatch, RNAseq data derived from Canthatch, NS1, and NS2, alignment-based SNP calling, and the physical assembly of chromosome 7D from the IWGSC (NRGene assembly).
+
+### *De novo* assembly of Canthatch, NS1, and NS2 flow sorted chromosome arm 7DL reads
+We used high stringency parameters in `Trimmomatic` to identify high quality reads. `Edena` requires that all reads used in assembly have identical size, therefore a considerable number of reads were removed before assembly.
 
 ```bash
 java -jar trimmomatic-0.36.jar PE -phred33 Can.7DL_DDPL00006_H32VYALXX_L6_1.clean.fq Can.7DL_DDPL00006_H32VYALXX_L6_2.clean.fq Can.7DL_gDNA_forward_paired.fq.gz Can.7DL_gDNA_forward_unpaired.fq.gz Can.7DL_gDNA_reverse_paired.fq.gz Can.7DL_gDNA_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:150 > Can.7DL.trimmomatic.run.log 2>&1 &
@@ -48,7 +66,7 @@ Next, we assembled individual chromosome arms genomes using `Edena` for Canthatc
 
 The Canthatch 7DL assembly was composed of approximately 129k contigs over 241 Mb.
 
-## Identification of EMS generated SNPs in NS1 and NS2 relative to Canthatch
+### Identification of EMS generated SNPs in NS1 and NS2 relative to Canthatch
 An alignment-based strategy was taken to identify SNPs between Canthatch and mutants NS1 and NS2.
 
 ```bash
@@ -135,14 +153,14 @@ java -jar VarScan.v2.3.8.jar mpileup2snp NS2.sorted.rmdup.pileup.txt > NS2.sorte
 java -jar VarScan.v2.3.8.jar mpileup2indel NS2.sorted.rmdup.pileup.txt > NS2.sorted.rmdup.mpileup2indel.txt
 ```
 
-## Anchoring of genomic contigs onto the NRGene assembly of chromosome 7D
+### Anchoring of genomic contigs onto the NRGene assembly of chromosome 7D
 Next, we anchored contigs relative to the NRGene assembly of chromosome 7DL using BLAST.
 
 ```bash
 blastall -p blastn -d chr7D.fa -i Can.7DL_edena_clean_v1.fasta -o Can.7DL_edena_clean_v1_chr7D_blastn.txt -a 16 -F F -v 1 -b 1
 ```
 
-## Annotation of leaf expressed genes on *de novo* Canthatch assembly
+### Annotation of leaf expressed genes on *de novo* Canthatch assembly
 First, we align RNAseq reads against the *de novo* Canthatch assembly with spliced alignment using Tophat.
 
 ```bash
@@ -162,8 +180,13 @@ Which commands did I use exactly to generate strand and no strand FASTA files? D
 
 **TODO** Double check all commands in the above section against scripts on computer in office.
 
-## Analysis to merge multiple data sources to identify non-synonymous SNPs between Canthatch and mutants
-The following set of scripts were used to identify SNPs that are considered high quality based on either a stringent or relaxed set of parameters.
+### Analysis to merge multiple data sources to identify non-synonymous SNPs between Canthatch and mutants
+The following set of scripts were used to identify SNPs that are considered high quality based on either a stringent or relaxed set of parameters (see table below).
+
+|Parameter set|Coverage|SNP freqency in wild-type|SNP frequency in mutant|
+|:-----------:|:------:|:-----------------------:|:---------------------:|
+|Stringent    |   10   |          <= 5%          |        >= 95%         |   
+|Relaxed      |   10   |         <= 20%          |        >= 70%         |   
 
 ```bash
 # Identify mutations that meet either strigent or relaxed sets of parameters
@@ -178,7 +201,10 @@ python link_position_expression.py
 
 Identified SNPs were used to generate markers for the initial mapping of the *Srs1* locus.
 
-## High strigency alignment of Canthatch, NS1, and NS2 flow sorted chromosome arm reads to *Srs* region
+## 
+
+
+### High strigency alignment of Canthatch, NS1, and NS2 flow sorted chromosome arm reads to *Srs* region
 The high identify found between Chinese Spring and Canthatch in the *Srs1* region permitted the use of a high strigency mapping approach to the IWGSC reference genome. We use `BBMap` with parameters that will allow a maximum of 2 SNPs and 1 InDel between individually mapped reads and the reference genome sequence.
 
 ```bash
@@ -231,45 +257,6 @@ samtools merge Srs_NS2N.sorted.bam Srs_NS2N_1.sorted.bam Srs_NS2N_2.sorted.bam
 
 Using these alignments, we were able to identify SNPs within the *Srs1* locus.
 
-## Gene expression of the homeologous *Med15a* gene family
-Initial mapping of RNAseq reads was performed using `HISAT2`.
-
-```bash
-./hisat2-2.1.0/hisat2-build chr7ABD_Med15.fa chr7ABD_Med15
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Med15_Can_RNAseq.sam
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Med15_NS1M_RNAseq.sam
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Med15_NS2N_RNAseq.sam
-```
-
-java -jar picard.jar SamToFastq I=Med15_Can_RNAseq.sorted.rmdup.pairs.bam FASTQ=Med15_Can_RNAseq_1.fastq SECOND_END_FASTQ=Med15_Can_RNAseq_2.fastq UNPAIRED_FASTQ=temp.fastq
-
-bowtie2-build chr7ABD_Med15.fa chr7ABD_Med15
-tophat2 -N 0 -p 4 --report-secondary-alignments chr7ABD_Med15 Med15_Can_RNAseq_1.fastq Med15_Can_RNAseq_2.fastq
-featureCounts -T 4 -M -O -t exon -g ID -a chr7ABD.gff3 -o Med15_Can_RNAseq.sorted.rmdup.tophat2_readCounts.txt tophat_out/accepted_hits.bam
-
-
-### Conversion of the *Srs* region from the Chinese Spring haplotype to the Canthatch haplotype
-
-Comment on the number of identified SNPs in the region
-
-```bash
-bedtools genomecov -d -split -ibam Srs_Can.sorted.rmdup.bam > Srs_Can.sorted.rmdup.genomecov.txt
-
-samtools index Srs_Can.sorted.rmdup.bam
-samtools mpileup -f chr7D_621250000_622360000.fa -BQ0 Srs_Can.sorted.rmdup.bam > Srs_Can.sorted.rmdup.mpileup.txt
-
-java -jar VarScan.v2.3.8.jar mpileup2snp Srs_Can.sorted.rmdup.mpileup.txt > Srs_Can.sorted.rmdup.mpileup2snp.txt
-java -jar VarScan.v2.3.8.jar mpileup2indel Srs_Can.sorted.rmdup.mpileup.txt > Srs_Can.sorted.rmdup.mpileup2indel.txt
-
-python QKgenome_conversion.py 10 80.0 chr7D_621250000_622360000.fa chr7D_621250000_622360000.gff3 Srs_Can.sorted.rmdup.mpileup2snp.txt Srs_Can.sorted.rmdup.mpileup2indel.txt Srs_Can.sorted.rmdup.genomecov.txt chr7D_621250000_622360000_Canthatch
-```
-
-Identify repeats in the *Srs1* locus. This information will be used to evaluate read coverage in non-repetitive regions.
-
-```bash
-RepeatMasker -species monocotyledons chr7D_621250000_622360000_Canthatch.fa
-```
-
 ## Realignment of Canthatch, NS1, and NS2 flow sorted chromosome arm reads to Canthatch converted *Srs* region
 ```bash
 ./bbmap/bbsplit.sh ref=chr7D_621250000_622360000_Canthatch.fa in1=Can.7DL_gDNA_forward_paired.fq.gz in2=Can.7DL_gDNA_reverse_paired.fq.gz minid=0.985 maxindel=1 outm=SrsQK_Can_1.sam
@@ -316,6 +303,45 @@ samtools rmdup SrsQK_NS2N_2.sorted.bam SrsQK_NS2N_2.sorted.rmdup.bam
 
 samtools merge SrsQK_NS2N.sorted.bam SrsQK_NS2N_1.sorted.bam SrsQK_NS2N_2.sorted.bam
 ```
+
+### Conversion of the *Srs* region from the Chinese Spring haplotype to the Canthatch haplotype
+
+Comment on the number of identified SNPs in the region
+
+```bash
+bedtools genomecov -d -split -ibam Srs_Can.sorted.rmdup.bam > Srs_Can.sorted.rmdup.genomecov.txt
+
+samtools index Srs_Can.sorted.rmdup.bam
+samtools mpileup -f chr7D_621250000_622360000.fa -BQ0 Srs_Can.sorted.rmdup.bam > Srs_Can.sorted.rmdup.mpileup.txt
+
+java -jar VarScan.v2.3.8.jar mpileup2snp Srs_Can.sorted.rmdup.mpileup.txt > Srs_Can.sorted.rmdup.mpileup2snp.txt
+java -jar VarScan.v2.3.8.jar mpileup2indel Srs_Can.sorted.rmdup.mpileup.txt > Srs_Can.sorted.rmdup.mpileup2indel.txt
+
+python QKgenome_conversion.py 10 80.0 chr7D_621250000_622360000.fa chr7D_621250000_622360000.gff3 Srs_Can.sorted.rmdup.mpileup2snp.txt Srs_Can.sorted.rmdup.mpileup2indel.txt Srs_Can.sorted.rmdup.genomecov.txt chr7D_621250000_622360000_Canthatch
+```
+
+Identify repeats in the *Srs1* locus. This information will be used to evaluate read coverage in non-repetitive regions.
+
+```bash
+RepeatMasker -species monocotyledons chr7D_621250000_622360000_Canthatch.fa
+```
+
+## Gene expression of the homeologous *Med15a* gene family
+Initial mapping of RNAseq reads was performed using `HISAT2`.
+
+```bash
+./hisat2-2.1.0/hisat2-build chr7ABD_Med15.fa chr7ABD_Med15
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Med15_Can_RNAseq.sam
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Med15_NS1M_RNAseq.sam
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Med15_NS2N_RNAseq.sam
+```
+
+java -jar picard.jar SamToFastq I=Med15_Can_RNAseq.sorted.rmdup.pairs.bam FASTQ=Med15_Can_RNAseq_1.fastq SECOND_END_FASTQ=Med15_Can_RNAseq_2.fastq UNPAIRED_FASTQ=temp.fastq
+
+bowtie2-build chr7ABD_Med15.fa chr7ABD_Med15
+tophat2 -N 0 -p 4 --report-secondary-alignments chr7ABD_Med15 Med15_Can_RNAseq_1.fastq Med15_Can_RNAseq_2.fastq
+featureCounts -T 4 -M -O -t exon -g ID -a chr7ABD.gff3 -o Med15_Can_RNAseq.sorted.rmdup.tophat2_readCounts.txt tophat_out/accepted_hits.bam
+
 
 ### Does loss of *Srs1* lead to increased expression of *Lr34*?
 
