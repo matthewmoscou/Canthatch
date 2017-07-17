@@ -5,10 +5,10 @@ In 1980, Kerber and Green identified the presence of a suppressor of resistance 
 
 
 ## Defining the genetic interval encompassing *Srs1*
-Our initial approach was to identify SNPs along the long arm of chromosome 7D in order to develop SNP markers that will be applied to the Canthatch x NS1 and Canthatch x NS2 doubled-haploid mapping populations. We use an approach that makes use of multiple data sets including *de novo* assembly of flow sorted chromosomes of Canthatch, RNAseq data derived from Canthatch, NS1, and NS2, alignment-based SNP calling, and the physical assembly of chromosome 7D from the IWGSC (NRGene assembly).
+Our initial approach was to identify SNPs along the long arm of chromosome 7D in order to develop SNP markers that will be applied to the Canthatch x NS1 and Canthatch x NS2 doubled-haploid mapping populations. We used an approach that integrates multiple data sets including *de novo* assembly of flow sorted chromosomes of Canthatch, RNAseq data derived from Canthatch, NS1, and NS2, alignment-based SNP calling, and the physical assembly of chromosome 7D from the IWGSC (NRGene assembly).
 
 ### *De novo* assembly of Canthatch, NS1, and NS2 flow sorted chromosome arm 7DL reads
-We used high stringency parameters in `Trimmomatic` to identify high quality reads. `Edena` requires that all reads used in assembly have identical size, therefore a considerable number of reads were removed before assembly.
+We sequenced flow sorted chromosome arm 7DL from Canthatch (wild-type) and mutants NS1 and NS2. We used high stringency parameters in `Trimmomatic` to identify high quality reads. `Edena` requires that all reads used for assembly have identical size, therefore a considerable number of reads were removed before assembly.
 
 ```bash
 java -jar trimmomatic-0.36.jar PE -phred33 Can.7DL_DDPL00006_H32VYALXX_L6_1.clean.fq Can.7DL_DDPL00006_H32VYALXX_L6_2.clean.fq Can.7DL_gDNA_forward_paired.fq.gz Can.7DL_gDNA_forward_unpaired.fq.gz Can.7DL_gDNA_reverse_paired.fq.gz Can.7DL_gDNA_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:150 > Can.7DL.trimmomatic.run.log 2>&1 &
@@ -36,7 +36,7 @@ java -jar trimmomatic-0.36.jar PE -phred33 Tratcher_DDPL00007-w_H3223ALXX_L8_1.c
 java -jar trimmomatic-0.36.jar PE -phred33 Tratcher_DDPL00007-w_H3727ALXX_L2_1.clean.fq.gz Tratcher_DDPL00007-w_H3727ALXX_L2_2.clean.fq.gz Thatcher_3_gDNA_forward_paired.fq.gz Thatcher_3_gDNA_forward_unpaired.fq.gz Thatcher_3_gDNA_reverse_paired.fq.gz Thatcher_3_gDNA_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:150 > Thatcher_3.trimmomatic.run.log 2>&1 &
 ```
 
-Next, we assembled individual chromosome arms genomes using `Edena` for Canthatch, NS1, and NS2
+Next, we assembled individual chromosome arms genomes using `Edena` for Canthatch, NS1, and NS2.
 
 ```bash
 # Canthatch
@@ -55,7 +55,7 @@ Next, we assembled individual chromosome arms genomes using `Edena` for Canthatc
 The Canthatch 7DL assembly was composed of approximately 129k contigs over 241 Mb.
 
 ### Identification of EMS generated SNPs in NS1 and NS2 relative to Canthatch
-An alignment-based strategy was taken to identify SNPs between Canthatch and mutants NS1 and NS2.
+An alignment-based strategy was taken to identify SNPs between Canthatch and mutants NS1 and NS2, using `bwa` for alignment.
 
 ```bash
 # Initialize assembly for bwa alignment
@@ -142,34 +142,28 @@ java -jar VarScan.v2.3.8.jar mpileup2indel NS2.sorted.rmdup.pileup.txt > NS2.sor
 ```
 
 ### Anchoring of genomic contigs onto the NRGene assembly of chromosome 7D
-Next, we anchored contigs relative to the NRGene assembly of chromosome 7DL using BLAST.
+Our approach was to anchor genomic contigs relative to the NRGene assembly in order to make efficient use of the physical space in selecting equidistant markers. We anchored contigs using BLAST.
 
 ```bash
 blastall -p blastn -d chr7D.fa -i Can.7DL_edena_clean_v1.fasta -o Can.7DL_edena_clean_v1_chr7D_blastn.txt -a 16 -F F -v 1 -b 1
 ```
 
 ### Annotation of leaf expressed genes on *de novo* Canthatch assembly
-First, we align RNAseq reads against the *de novo* Canthatch assembly with spliced alignment using Tophat.
+RNAseq alignment was performd against the *de novo* Canthatch assembly with spliced alignment using `Tophat`. RNAseq data derived from Canthatch, NS1, and NS2 were used for gene prediction.
 
 ```bash
 bowtie2-build Can.7DL_edena_clean_v1.fasta Can.7DL_edena_clean_v1
-tophat --max-intron-length 20000 --num-threads 4 Can.7DL_edena_clean_v1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz
+tophat --max-intron-length 20000 --num-threads 4 Can.7DL_edena_clean_v1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz,TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz,TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz,TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz,TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz
 ```
 
-Next, we identify gene models using Cufflinks and identify longest open reading frames using TransDecoder.
+Next, we identify gene models using Cufflinks.
 
 ```bash
-cufflinks accepted_hits_Can.7DL_Can.7DL.bam
-TransDecoder.LongOrfs -t Canthatch_cufflinks_ALL_strand.fa
-TransDecoder.LongOrfs -t Canthatch_cufflinks_ALL_nostrand.fa
+cufflinks -p 4 -o cufflinks_all accepted_hits_Can.7DL_Can.7DL.bam
 ```
 
-Which commands did I use exactly to generate strand and no strand FASTA files? Did I use a custom script to extract using GTF from the cufflinks? Did I use cuffmerge?
-
-**TODO** Double check all commands in the above section against scripts on computer in office.
-
 ### Analysis to merge multiple data sources to identify non-synonymous SNPs between Canthatch and mutants
-The following set of scripts were used to identify SNPs that are considered high quality based on either a stringent or relaxed set of parameters (see table below).
+The analyses above were integrated to identify SNPs between Canthatch and mutants for marker development, as well as uncover non-synonymous mutations in candidate genes. The pipeline is described below using a set of scripts that identify high quality SNPs based on either a stringent or relaxed set of parameters (see table below).
 
 |Parameter set|Coverage|SNP freqency in wild-type|SNP frequency in mutant|
 |:-----------:|:------:|:-----------------------:|:---------------------:|
@@ -187,7 +181,27 @@ python analyze_HQ_SNPs.py
 python link_position_expression.py
 ```
 
-Identified SNPs were used to generate markers for the initial mapping of the *Srs1* locus.
+The Python script `link_position_expression.py` will generate two FASTA files that identify transcripts with known or unknown strand orientation. Transdecoder is used to identfy the longest open reading frames and peptide sequence. Then, `link_position_expression.py` is ran again, where it can now integrate this information with the entire data set.
+
+```bash
+TransDecoder.LongOrfs -t Canthatch_cufflinks_ALL_strand.fa -S
+TransDecoder.LongOrfs -t Canthatch_cufflinks_ALL_nostrand.fa
+
+python link_position_expression.py
+```
+
+The output includes the following files:
+
+**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_NS1_position_cufflinks.txt**
+**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_NS2_position_cufflinks.txt**
+All critical information is linked within these text files, including contigs, reference and mutant SNP, position in contig, position on chromosome 7D, and expressed genes in contig.
+
+**IUPAC_KASP_contigs.fa**
+Input file for generating KASP markers on EMS generated SNPs.
+
+**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_POI.fa**
+Protein sequence for candidate genes (where SNPs lead to a non-synonymous change in sequence).
+
 
 ## Establishing the gene content and EMS-derived polymorphisms within the *Srs1* physical interval
 The high identify found between Chinese Spring and Canthatch in the *Srs1* region permitted the use of a high strigency mapping approach to the IWGSC reference genome (v1.0). Two approaches were used:
