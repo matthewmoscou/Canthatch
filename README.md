@@ -309,7 +309,7 @@ python QKgenome_conversion.py 10 80.0 chr7D_621250000_622360000_Canthatch.fa chr
 
 
 
-## Gene expression of the homeologous *Med15a* gene family
+### Gene expression of the homeologous *Med15a* gene family
 Initial mapping of RNAseq reads was performed using `HISAT2`.
 
 ```bash
@@ -319,12 +319,53 @@ Initial mapping of RNAseq reads was performed using `HISAT2`.
 ./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Med15_NS2N_RNAseq.sam
 ```
 
+The challenge with the hexaploid genome is aligning reads that specifically map to individual sub-genomes. The initial `HISAT2` run was used to identify reads mapping to the Med15 7DL gene family. Next, we extract the aligned RNAseq reads and realign them using `tophat2` using highlt stringent parameters (`-N 0`, *i.e.* no differences between the read and the reference).
+
+```bash
+samtools view -F 4 -Shub -o Med15_Can_RNAseq.bam Med15_Can_RNAseq.sam
+samtools sort Med15_Can_RNAseq.bam Med15_Can_RNAseq.sorted
+samtools rmdup Med15_Can_RNAseq.sorted.bam Med15_Can_RNAseq.sorted.rmdup.bam
+
+samtools view -F 4 -Shub -o Med15_NS1M_RNAseq.bam Med15_NS1M_RNAseq.sam
+samtools sort Med15_NS1M_RNAseq.bam Med15_NS1M_RNAseq.sorted
+samtools rmdup Med15_NS1M_RNAseq.sorted.bam Med15_NS1M_RNAseq.sorted.rmdup.bam
+
+samtools view -F 4 -Shub -o Med15_NS2N_RNAseq.bam Med15_NS2N_RNAseq.sam
+samtools sort Med15_NS2N_RNAseq.bam Med15_NS2N_RNAseq.sorted
+samtools rmdup Med15_NS2N_RNAseq.sorted.bam Med15_NS2N_RNAseq.sorted.rmdup.bam
+
 java -jar picard.jar SamToFastq I=Med15_Can_RNAseq.sorted.rmdup.pairs.bam FASTQ=Med15_Can_RNAseq_1.fastq SECOND_END_FASTQ=Med15_Can_RNAseq_2.fastq UNPAIRED_FASTQ=temp.fastq
 
 bowtie2-build chr7ABD_Med15.fa chr7ABD_Med15
 tophat2 -N 0 -p 4 --report-secondary-alignments chr7ABD_Med15 Med15_Can_RNAseq_1.fastq Med15_Can_RNAseq_2.fastq
 featureCounts -T 4 -M -O -t exon -g ID -a chr7ABD.gff3 -o Med15_Can_RNAseq.sorted.rmdup.tophat2_readCounts.txt tophat_out/accepted_hits.bam
+```
 
+After this initial run, we found that several regions within all Med15.7L genes lacked mapped reads. This was due to SNPs between Canthatch and Chinese Spring alleles. Manual curation using `HISAT2` aligned RNAseq reads was used to convert the coding sequences for *Med15.7AL* and *Med15.7BL* from Chinese Spring to Canthatch. The `QKgenome` pipeline was used to curate *Med15.7DL*. `HISAT2` was performed again to identify reads mapping to the Med15 7DL gene family. We extract the aligned RNAseq reads and realigned them using `tophat2` using highlt stringent parameters (`-N 0`, *i.e.* no differences between the read and the reference).
+
+```bash
+./hisat2-2.1.0/hisat2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Med15_Can_Can_RNAseq.sam
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Med15_Can_NS1M_RNAseq.sam
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Med15_Can_NS2N_RNAseq.sam
+
+samtools view -F 4 -Shub -o Med15_Can_Can_RNAseq.bam Med15_Can_Can_RNAseq.sam
+samtools sort Med15_Can_Can_RNAseq.bam Med15_Can_Can_RNAseq.sorted
+samtools rmdup Med15_Can_Can_RNAseq.sorted.bam Med15_Can_Can_RNAseq.sorted.rmdup.bam
+
+samtools view -F 4 -Shub -o Med15_Can_NS1M_RNAseq.bam Med15_Can_NS1M_RNAseq.sam
+samtools sort Med15_Can_NS1M_RNAseq.bam Med15_Can_NS1M_RNAseq.sorted
+samtools rmdup Med15_Can_NS1M_RNAseq.sorted.bam Med15_Can_NS1M_RNAseq.sorted.rmdup.bam
+
+samtools view -F 4 -Shub -o Med15_Can_NS2N_RNAseq.bam Med15_Can_NS2N_RNAseq.sam
+samtools sort Med15_Can_NS2N_RNAseq.bam Med15_Can_NS2N_RNAseq.sorted
+samtools rmdup Med15_Can_NS2N_RNAseq.sorted.bam Med15_Can_NS2N_RNAseq.sorted.rmdup.bam
+
+java -jar picard.jar SamToFastq I=Med15_Can_Can_RNAseq.sorted.rmdup.pairs.bam FASTQ=Med15_Can_Can_RNAseq_1.fastq SECOND_END_FASTQ=Med15_Can_Can_RNAseq_2.fastq UNPAIRED_FASTQ=temp.fastq
+
+bowtie2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
+tophat2 -N 0 -p 4 --report-secondary-alignments Med15_7L_Canthatch Med15_Can_Can_RNAseq_1.fastq Med15_Can_Can_RNAseq_2.fastq
+```
 
 ### Does loss of *Srs1* lead to increased expression of *Lr34*?
 
@@ -386,7 +427,7 @@ GTAGTTGGTTAGCTGCATGTGCGGTTGTAAGCTAGTTTGATGGGTGAGTGGCATAGGAGACGGGCAGGTTGTTGCCCTGG
 ```
 
 
-## *Lr34*
+### *Lr34*
 
 |Gene           |Chromosome|Start   |End     |
 |:-------------:|:--------:|:------:|:------:|
@@ -399,3 +440,82 @@ Lr34	1599	864	792
 Reads	41000991	29237025	27664945
 
 
+## Phylogenetic and diversity analysis of *TaMed15* gene family
+
+### Natural variation in *Med15* in *Aegilops tauschii*
+
+```bash
+~/src/hisat2-2.0.5/hisat2-build chr7D_Med15.fa chr7D_Med15
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058959_1.fastq.gz -2 ~/temp/DRR058959_2.fastq.gz -S AetMed15_AT76_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_AT76_RNAseq.sam > AetMed15_AT76_RNAseq.bam
+samtools sort AetMed15_AT76_RNAseq.bam AetMed15_AT76_RNAseq_sorted
+samtools rmdup AetMed15_AT76_RNAseq_sorted.bam AetMed15_AT76_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058960_1.fastq.gz -2 ~/temp/DRR058960_2.fastq.gz -S AetMed15_KU-2003_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_KU-2003_RNAseq.sam > AetMed15_KU-2003_RNAseq.bam
+samtools sort AetMed15_KU-2003_RNAseq.bam AetMed15_KU-2003_RNAseq_sorted
+samtools rmdup AetMed15_KU-2003_RNAseq_sorted.bam AetMed15_KU-2003_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058961_1.fastq.gz -2 ~/temp/DRR058961_2.fastq.gz -S AetMed15_KU-2025_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_KU-2025_RNAseq.sam > AetMed15_KU-2025_RNAseq.bam
+samtools sort AetMed15_KU-2025_RNAseq.bam AetMed15_KU-2025_RNAseq_sorted
+samtools rmdup AetMed15_KU-2025_RNAseq_sorted.bam AetMed15_KU-2025_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058962_1.fastq.gz -2 ~/temp/DRR058962_2.fastq.gz -S AetMed15_KU-2075_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_KU-2075_RNAseq.sam > AetMed15_KU-2075_RNAseq.bam
+samtools sort AetMed15_KU-2075_RNAseq.bam AetMed15_KU-2075_RNAseq_sorted
+samtools rmdup AetMed15_KU-2075_RNAseq_sorted.bam AetMed15_KU-2075_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058963_1.fastq.gz -2 ~/temp/DRR058963_2.fastq.gz -S AetMed15_KU-2078_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_KU-2078_RNAseq.sam > AetMed15_KU-2078_RNAseq.bam
+samtools sort AetMed15_KU-2078_RNAseq.bam AetMed15_KU-2078_RNAseq_sorted
+samtools rmdup AetMed15_KU-2078_RNAseq_sorted.bam AetMed15_KU-2078_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058964_1.fastq.gz -2 ~/temp/DRR058964_2.fastq.gz -S AetMed15_KU-2087_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_KU-2087_RNAseq.sam > AetMed15_KU-2087_RNAseq.bam
+samtools sort AetMed15_KU-2087_RNAseq.bam AetMed15_KU-2087_RNAseq_sorted
+samtools rmdup AetMed15_KU-2087_RNAseq_sorted.bam AetMed15_KU-2087_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058965_1.fastq.gz -2 ~/temp/DRR058965_2.fastq.gz -S AetMed15_KU-2093_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_KU-2093_RNAseq.sam > AetMed15_KU-2093_RNAseq.bam
+samtools sort AetMed15_KU-2093_RNAseq.bam AetMed15_KU-2093_RNAseq_sorted
+samtools rmdup AetMed15_KU-2093_RNAseq_sorted.bam AetMed15_KU-2093_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058966_1.fastq.gz -2 ~/temp/DRR058966_2.fastq.gz -S AetMed15_KU-2124_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_KU-2124_RNAseq.sam > AetMed15_KU-2124_RNAseq.bam
+samtools sort AetMed15_KU-2124_RNAseq.bam AetMed15_KU-2124_RNAseq_sorted
+samtools rmdup AetMed15_KU-2124_RNAseq_sorted.bam AetMed15_KU-2124_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058967_1.fastq.gz -2 ~/temp/DRR058967_2.fastq.gz -S AetMed15_KU-2627_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_KU-2627_RNAseq.sam > AetMed15_KU-2627_RNAseq.bam
+samtools sort AetMed15_KU-2627_RNAseq.bam AetMed15_KU-2627_RNAseq_sorted
+samtools rmdup AetMed15_KU-2627_RNAseq_sorted.bam AetMed15_KU-2627_RNAseq_sorted_rmdup.bam
+
+~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058968_1.fastq.gz -2 ~/temp/DRR058968_2.fastq.gz -S AetMed15_PI499262_RNAseq.sam
+samtools view -f 2 -Shub AetMed15_PI499262_RNAseq.sam > AetMed15_PI499262_RNAseq.bam
+samtools sort AetMed15_PI499262_RNAseq.bam AetMed15_PI499262_RNAseq_sorted
+samtools rmdup AetMed15_PI499262_RNAseq_sorted.bam AetMed15_PI499262_RNAseq_sorted_rmdup.bam
+```
+
+### RNAseq coverage over *TaMed15.7DL*
+bedtools genomecov -d -split -ibam Med15_Can_RNAseq.sorted.rmdup.bam > Med15_Can.7DL.sorted.rmdup.genomecov.txt
+bedtools genomecov -d -split -ibam Med15_NS1M_RNAseq.sorted.rmdup.bam > Med15_NS1M.7DL.sorted.rmdup.genomecov.txt
+bedtools genomecov -d -split -ibam Med15_NS2N_RNAseq.sorted.rmdup.bam > Med15_NS2N.7DL.sorted.rmdup.genomecov.txt
+
+Note: In Trinity assembly of Canthatch, all three homeologs of collapse into a single RNAseq contig
+
+```R
+library(ggplot2)
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+setwd("~/Desktop/bioinformatics/Canthatch/mutchromseq/physical_analysis_v2/Canthatch_Med15_RNAseq/")
+
+data = read.table(file="Canthatch_Med15_RNAseq.txt", header=T)
+data = data.frame(data)
+
+ggplot(data, aes(position, normexpression, color=genotype)) + geom_area(aes(fill=genotype)) + scale_fill_manual(values=cbPalette) + scale_color_manual(values=cbPalette)
+
+ggsave("Med15_RNAseq.eps", width=10, height=4)
+```
