@@ -163,12 +163,14 @@ cufflinks -p 4 -o cufflinks_all accepted_hits_Can.7DL_Can.7DL.bam
 ```
 
 ### Analysis to merge multiple data sources to identify non-synonymous SNPs between Canthatch and mutants
-The analyses above were integrated to identify SNPs between Canthatch and mutants for marker development, as well as uncover non-synonymous mutations in candidate genes. The pipeline is described below using a set of scripts that identify high quality SNPs based on either a stringent or relaxed set of parameters (see table below).
+The analyses above were integrated to identify SNPs between Canthatch and mutants for marker development, as well as uncover non-synonymous mutations in candidate genes. 
 
 |Parameter set|Coverage|SNP freqency in wild-type|SNP frequency in mutant|
 |:-----------:|:------:|:-----------------------:|:---------------------:|
 |Stringent    |   10   |          <= 5%          |        >= 95%         |   
 |Relaxed      |   10   |         <= 20%          |        >= 70%         |   
+
+The pipeline includes a set of scripts that identify high quality SNPs based on either a stringent or relaxed set of parameters (see table above). Parameters are modified directly in the script `mutant_flow_sorting_analysis.py`.
 
 ```bash
 # Identify mutations that meet either strigent or relaxed sets of parameters
@@ -192,14 +194,14 @@ python link_position_expression.py
 
 The output includes the following files:
 
-**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_NS1_position_cufflinks.txt**
-**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_NS2_position_cufflinks.txt**
+**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_NS1_position_cufflinks.txt**   
+**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_NS2_position_cufflinks.txt**   
 All critical information is linked within these text files, including contigs, reference and mutant SNP, position in contig, position on chromosome 7D, and expressed genes in contig.
 
-**IUPAC_KASP_contigs.fa**
+**IUPAC_KASP_contigs.fa**   
 Input file for generating KASP markers on EMS generated SNPs.
 
-**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_POI.fa**
+**Canthatch_mutant_flow_sorting_Can.7DL_HQ_SNPs_POI.fa**   
 Protein sequence for candidate genes (where SNPs lead to a non-synonymous change in sequence).
 
 
@@ -209,7 +211,7 @@ The high identify found between Chinese Spring and Canthatch in the *Srs1* regio
    * High strigent alignment of reads to the Chinese Spring physical interval
 
 ### High strigency alignment of Canthatch flow sorted chromosome arm reads to *Srs1* region
-Our first step is to convert the Chinese Spring reference sequence into the Canthatch haplotype. The [QKgenome](https://github.com/matthewmoscou/QKgenome) pipeline was used, although read mapping was performed using `BBMap` with parameters that will allow a maximum of 2 SNPs and 1 InDel between individually mapped reads and the reference genome sequence.
+Our first step was to convert the Chinese Spring reference sequence into the Canthatch haplotype. The [QKgenome](https://github.com/matthewmoscou/QKgenome) pipeline was used, although in this instance, read mapping was performed using `BBMap` with parameters that will allow a maximum of 2 SNPs and 1 InDel between individually mapped reads and the reference genome sequence.
 
 ```bash
 ./bbmap/bbsplit.sh ref=chr7D_621250000_622360000.fa in1=Can_gDNA_forward_paired.fq.gz in2=Can_gDNA_reverse_paired.fq.gz minid=0.985 maxindel=1 outm=Srs_Can_1.sam
@@ -231,7 +233,7 @@ samtools merge Srs_Can.sorted.bam Srs_Can_1.sorted.bam Srs_Can_2.sorted.bam
 ```
 
 ### Conversion of the *Srs1* region from the Chinese Spring haplotype to the Canthatch haplotype
-`QKgenome` was used to convert the Chinese Spring haplotype into the Canthatch haplotype. Parameters include a coverage of 10 reads and 80% alternate allele frequency.
+`QKgenome` was used to convert the Chinese Spring haplotype into the Canthatch haplotype. Parameters include a coverage of 10 reads and an alternate allele frequency of 80%.
 
 ```bash
 bedtools genomecov -d -split -ibam Srs_Can.sorted.rmdup.bam > Srs_Can.sorted.rmdup.genomecov.txt
@@ -253,6 +255,8 @@ RepeatMasker -species monocotyledons chr7D_621250000_622360000_Canthatch.fa
 ```
 
 ### Realignment of Canthatch, NS1, and NS2 flow sorted chromosome arm reads to Canthatch converted *Srs1* region
+First, reads were aligned to the Canthatch converted sequence.
+
 ```bash
 ./bbmap/bbsplit.sh ref=chr7D_621250000_622360000_Canthatch.fa in1=Can.7DL_gDNA_forward_paired.fq.gz in2=Can.7DL_gDNA_reverse_paired.fq.gz minid=0.985 maxindel=1 outm=SrsQK_Can_1.sam
 ./bbmap/bbsplit.sh ref=chr7D_621250000_622360000_Canthatch.fa in1=Can.7DL_2_gDNA_forward_paired.fq.gz in2=Can.7DL_2_gDNA_reverse_paired.fq.gz minid=0.985 maxindel=1 outm=SrsQK_Can_2.sam
@@ -263,6 +267,8 @@ RepeatMasker -species monocotyledons chr7D_621250000_622360000_Canthatch.fa
 ./bbmap/bbsplit.sh ref=chr7D_621250000_622360000_Canthatch.fa in1=NS2N_gDNA_forward_paired.fq.gz in2=NS2N_gDNA_reverse_paired.fq.gz minid=0.985 maxindel=1 outm=SrsQK_NS2N_1.sam
 ./bbmap/bbsplit.sh ref=chr7D_621250000_622360000_Canthatch.fa in1=NS2N_2_gDNA_forward_paired.fq.gz in2=NS2N_2_gDNA_reverse_paired.fq.gz minid=0.985 maxindel=1 outm=SrsQK_NS2N_2.sam
 ```
+
+Next, SAM files were converted into BAM files, with the requirement of pairs and duplicates generated from PCR.
 
 ```bash
 # Canthatch
@@ -299,6 +305,8 @@ samtools rmdup SrsQK_NS2N_2.sorted.bam SrsQK_NS2N_2.sorted.rmdup.bam
 samtools merge SrsQK_NS2N.sorted.bam SrsQK_NS2N_1.sorted.bam SrsQK_NS2N_2.sorted.bam
 ```
 
+`VarScan` was used to identify SNPs within the *Srs1* locus. `bedtools` was used to determine read coverage across the locus. Last, `QKgenom_conversion` was used to identify SNPs that led to non-synonymous mutations in the annotated genes at the *Srs1* locus.
+
 ```bash
 bedtools genomecov -d -split -ibam SrsQK_NS1M.sorted.bam > SrsQK_NS1M.sorted.genomecov.txt
 bedtools genomecov -d -split -ibam SrsQK_NS2N.sorted.bam > SrsQK_NS2N.sorted.genomecov.txt
@@ -319,9 +327,7 @@ python QKgenome_conversion.py 10 80.0 chr7D_621250000_622360000_Canthatch.fa chr
 python QKgenome_conversion.py 10 80.0 chr7D_621250000_622360000_Canthatch.fa chr7D_621250000_622360000_Canthatch.gff3 SrsQK_NS2N.sorted.mpileup2snp.txt SrsQK_NS2N.sorted.mpileup2indel.txt SrsQK_NS2N.sorted.genomecov.txt chr7D_621250000_622360000_Canthatch_NS2N
 ```
 
-**TODO** Need to perform hisat2 alignments on SrsQK reference dataset, alternatively, I could use existing data set as it is just a featureCounts output. No, better to use converted genome as it will ensure the maximum number of SNPs will map to the reference sequence.
-
-
+Very few EMS generated SNPs exist within the region. The alignment based strategy was found to overpredict SNPs, predominantly in repetitive regions. In contrast, alignment of *de novo* assemblies spanned the majority of the *Srs1* interval for Canthatch, NS1, and NS2. The majority of the alignments exhibited perfect identity (100%) to Chinese Spring.
 
 ### Gene expression of the homeologous *Med15a* gene family
 Initial mapping of RNAseq reads was performed using `HISAT2`.
@@ -381,6 +387,32 @@ bowtie2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
 tophat2 -N 0 -p 4 --report-secondary-alignments Med15_7L_Canthatch Med15_Can_Can_RNAseq_1.fastq Med15_Can_Can_RNAseq_2.fastq
 ```
 
+RNAseq alignments confirmed exon/intron junctions for all three homeologs. For *Med15.7BL*, RNAseq reads only supported the gene model TraesCS7B01G460900.1. For *Med15.7DL*, RNAseq reads only supported the gene model TraesCS7D01G526100.1, but not TraesCS7D01G526100.2.
+
+### SNPs within the *Srs1* interval
+Sequence flanking mutations in the *Srs1* interval identified using aligned *de novo* assemblies.
+
+```
+>NS2_158661
+CGCCTCCGCCTCCGTGTACATGGTGACGCGAGGTGAGTCAAACTCAATGTCACTTGGGATGACGGCCTCGGCACCGTACACGAGGAAGAATGGAGTGAAGYCGGTTGATTTGTTCGAAGTGGTACGGAGGCTCCAGAGGACGGCCGGCAGCTCGTCGATCCAGCAGTCGGCCGACCGCTCCAGTGGCTCGACCAGTCGGGG
+>NS2_390486
+CGGGAGCTATTTGTTGCACATCCCAGTTATTTTTCACATTTAGTATATACATACATAATGTAAGTTAGGGCAAGTTCTTTAGGGCAGCTTAAAAATTAAGYTGCCTCTCCCCAGCTTAAAAAATAATCCGTCCTCTAAGTTTGTTGAGACTTCTAAATTAGCTATTTCATAACTAGTTTAGAAGCCCCAATGAACAAGAGA
+>NS1_393242
+ATCGATGTCTTCGCTGGTGGTGGTGCGGTGAAGAACGTCGGCGGGGTCGTAGTGAAGGAGGCTGGCGGTGGCATGGCCATTGTCGCCCTCGGCTTGTTCGYTGCCGCCCGGCATGCCGCCTCCATTCTCTCCCACGGCGCCGGCGGGGATGGGACACGTGCTTAGCGGTGCTCCTGGCCTGGGTGTCACCGCCGGCTGAGG
+>NS1_394896
+GCCACAACAATTGGGCTCTCAGGCAAACATGTCAAGTTTACAGCAGCAGCAACAAAATCAACAGCAGCAGCGGATGCATATGCTACAAATGAAAGCTCAGYAAACGCAGCAACAACAGCATGCTCAACAACCACCAATGGGTTTGATGCAACCTCAGTCCCAACACAACCAACTTCAGCAATCGCAGCAACATCTTATGTC
+>NS2_397520
+CTCCATGCAAGCAAATGCAAGTTCATTACAGCAGCTGAAGCAGCAACAGCAGGATCATCATATGATGCAGAGTCAGCAAATGAAGCGTCAGATGTTTCAGYAGTACCAGCAAAAGCAACAAATGCTTCAACAGCAGTTCCCAATACAGCAACAATTACAGAAACAGCAGCAAGTACAGATGCAGGTTCCACAGCTTCATGC
+>NS1_483619
+ACACTCCGAGTTTGCGCAGCTGGGTGAGTTTGTTGAGCTCTTTGACGATGTCCTTCCCGCCTGAAGCACCAATGTTGACAACACCGAGCGTGTGCAATGCYGTCAGTTCACCAATCCTGCTTGGCACTACAACACCAACTAGGCGACGACATCTGCGGAACTCCGGCAAGAAGCTAGTTGAGGCATCTGGCGTTGATGCTG
+>NS2_569625
+TATAGGTACATCCATTTTTGGACAAATGAAAGCCAAGTATTTTGGAACGGAGGGAGTAGAACTGAACTTTTTGGTTTTGTGAATGAAATTGGGGAGATATYGCTTTCTTCAACAAATAAATGATCACCCAGAACAAATACATTTTAAAATTATTTTAATATGGAGTACCGCAATATAATCAGTAGATTAGGTTGGGTTGCG
+>NS2_906749
+TTTATAATCAGGTCAGATAGTCATTTTGTAAACATAAGCTTAGTGTAGGGCATGTGGTTACCTACATGCCCTACACTAAGCTTGTGTTTTCCGGTGCTCGYCTTTTTTCTTACCATTTTGGCATTTGTTTTCTTGTTGTTTTCTAGTCGAATGACTCATCTACTCTATTAGTATGGTTATATGCATAAGATATTTCGATCA
+>NS1_1093857
+TGCTCCTGTTGAACTAAAACTGTTTCAAATAAATTTGATAAAAATGCCACAAAATACTGTGAGACCCTCTGATGTGTATAGATCACTTTTAGGTAAAAATYCATCTTGTTCATTTGAAAAGTTTGGCCACAACATTCTACCATGGCATTACGAAAGTTTGCCACAGCATTACTAAAGTTTGCCACAACATTACTAAAGTTC
+```
+
 ### Does loss of *Srs1* lead to increased expression of *Lr34*?
 
 ```bash
@@ -407,40 +439,6 @@ samtools sort Lr34_NS2N_RNAseq.bam Lr34_NS2N_RNAseq.sorted
 samtools rmdup Lr34_NS2N_RNAseq.sorted.bam Lr34_NS2N_RNAseq.sorted.rmdup.bam
 ```
 
-Do reads cross map between homeologs?
-
-
-**TODO**
-* Need to run BBmap on the Canthatch converted region of Chinese Spring, DONE
-* Need to run RNAseq alignments on everything again, DONE
-* Need to setup a Github with all code, DONE
-* Need to generate a figure to describe read coverage in the *Srs1* region
-* Need to incorporate read coverage information form already generated figure
-
-Sequence flanking mutations in the *Srs1* interval identified using aligned *de novo* assemblies.
-
-```
->NS2_158661
-CGCCTCCGCCTCCGTGTACATGGTGACGCGAGGTGAGTCAAACTCAATGTCACTTGGGATGACGGCCTCGGCACCGTACACGAGGAAGAATGGAGTGAAGYCGGTTGATTTGTTCGAAGTGGTACGGAGGCTCCAGAGGACGGCCGGCAGCTCGTCGATCCAGCAGTCGGCCGACCGCTCCAGTGGCTCGACCAGTCGGGG
->NS2_390486
-CGGGAGCTATTTGTTGCACATCCCAGTTATTTTTCACATTTAGTATATACATACATAATGTAAGTTAGGGCAAGTTCTTTAGGGCAGCTTAAAAATTAAGYTGCCTCTCCCCAGCTTAAAAAATAATCCGTCCTCTAAGTTTGTTGAGACTTCTAAATTAGCTATTTCATAACTAGTTTAGAAGCCCCAATGAACAAGAGA
->NS1_393242
-ATCGATGTCTTCGCTGGTGGTGGTGCGGTGAAGAACGTCGGCGGGGTCGTAGTGAAGGAGGCTGGCGGTGGCATGGCCATTGTCGCCCTCGGCTTGTTCGYTGCCGCCCGGCATGCCGCCTCCATTCTCTCCCACGGCGCCGGCGGGGATGGGACACGTGCTTAGCGGTGCTCCTGGCCTGGGTGTCACCGCCGGCTGAGG
->NS1_394896
-GCCACAACAATTGGGCTCTCAGGCAAACATGTCAAGTTTACAGCAGCAGCAACAAAATCAACAGCAGCAGCGGATGCATATGCTACAAATGAAAGCTCAGYAAACGCAGCAACAACAGCATGCTCAACAACCACCAATGGGTTTGATGCAACCTCAGTCCCAACACAACCAACTTCAGCAATCGCAGCAACATCTTATGTC
->NS2_397520
-CTCCATGCAAGCAAATGCAAGTTCATTACAGCAGCTGAAGCAGCAACAGCAGGATCATCATATGATGCAGAGTCAGCAAATGAAGCGTCAGATGTTTCAGYAGTACCAGCAAAAGCAACAAATGCTTCAACAGCAGTTCCCAATACAGCAACAATTACAGAAACAGCAGCAAGTACAGATGCAGGTTCCACAGCTTCATGC
->NS1_483619
-ACACTCCGAGTTTGCGCAGCTGGGTGAGTTTGTTGAGCTCTTTGACGATGTCCTTCCCGCCTGAAGCACCAATGTTGACAACACCGAGCGTGTGCAATGCYGTCAGTTCACCAATCCTGCTTGGCACTACAACACCAACTAGGCGACGACATCTGCGGAACTCCGGCAAGAAGCTAGTTGAGGCATCTGGCGTTGATGCTG
->NS2_569625
-TATAGGTACATCCATTTTTGGACAAATGAAAGCCAAGTATTTTGGAACGGAGGGAGTAGAACTGAACTTTTTGGTTTTGTGAATGAAATTGGGGAGATATYGCTTTCTTCAACAAATAAATGATCACCCAGAACAAATACATTTTAAAATTATTTTAATATGGAGTACCGCAATATAATCAGTAGATTAGGTTGGGTTGCG
->NS1_1093857
-TGCTCCTGTTGAACTAAAACTGTTTCAAATAAATTTGATAAAAATGCCACAAAATACTGTGAGACCCTCTGATGTGTATAGATCACTTTTAGGTAAAAATYCATCTTGTTCATTTGAAAAGTTTGGCCACAACATTCTACCATGGCATTACGAAAGTTTGCCACAGCATTACTAAAGTTTGCCACAACATTACTAAAGTTC
->NS1_1100289
-GTAGTTGGTTAGCTGCATGTGCGGTTGTAAGCTAGTTTGATGGGTGAGTGGCATAGGAGACGGGCAGGTTGTTGCCCTGGTAGTGGTAGCGTGTGCATGCRTGTGCCATTTAAACAGCCGTGGTGCTGTGTAGAGAGCGCGGAAGCCAGAAGAAGAGATGTAGTCTCCAATGGTCGGTGCGTGTGTGTTCGGAGAGAAGCT
-```
-
-
 ### *Lr34*
 
 |Gene           |Chromosome|Start   |End     |
@@ -454,7 +452,19 @@ Lr34	1599	864	792
 Reads	41000991	29237025	27664945
 
 
-## Phylogenetic and diversity analysis of *TaMed15* gene family
+## Phylogenetic and diversity analysis of *Med15* gene family
+To understand the evolution of the *Med15*, we identified homologs in several grass species.
+
+```bash
+prank -d=Med15_phylogeny.fa -o=Med15_phylogeny.phy -f=phylips -DNA -codon
+raxml -s Med15_phylogeny.phy -n Med15_Ma_outgroup -m GTRCAT -o MaMed15 -p 15658436543243 -T 4
+raxml -s Med15_phylogeny.phy -n Med15_Ma_outgroup_bootstrap_r1 -m GTRCAT -o MaMed15 -N 1000 -p 437189534321 -T 4
+cat RAxML_parsimonyTree.Med15_Ma_outgroup_bootstrap_r* > allBootstraps
+raxml -z allBootstraps -m GTRCAT -I autoMRE -n TEST -p 38741289345
+raxml -f b -z allBootstraps -t RAxML_result.Med15_Ma_outgroup -m GTRCAT -n Med15_Ma_outgroup_labels
+```
+
+Do HvMed15a and HvMed15b assemble independently in barley leaf transcriptome?
 
 ### Natural variation in *Med15* in *Aegilops tauschii*
 
@@ -532,4 +542,20 @@ data = data.frame(data)
 ggplot(data, aes(position, normexpression, color=genotype)) + geom_area(aes(fill=genotype)) + scale_fill_manual(values=cbPalette) + scale_color_manual(values=cbPalette)
 
 ggsave("Med15_RNAseq.eps", width=10, height=4)
+```
+
+### RNAseq analysis of differentially expressed genes in Canthatch, NS1, and NS2
+Non-replicated data sets
+Assess the quality of the data
+Identify genes with large fold change differences
+Identify any trends in the data
+Justification of a large scale expression analysis
+
+Insert code for mapping
+Currently using averaged RPKM values
+Perhaps use RSEM instead according to Sebastian's labs paper?
+
+Need to modify merge_RNAseq_datasets.py to take any input/output identifier with OptParse
+```bash
+python merge_RNAseq_datasets.py
 ```
