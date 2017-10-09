@@ -1,7 +1,7 @@
 # Canthatch
 In 1980, Kerber and Green identified the presence of a suppressor of resistance in wheat to wheat stem rust (*Puccinia graminis* f. sp. *tritici*). Kerber and Green (1980) mapped the suppression to chromosome 7D, and Kerber (1991) established that a single locus conferred suppression on chromosome 7D. We set out to identify the suppressor gene in Canthatch by applying chromosome flow sorting and high throughput sequencing to Canthatch and two EMS-derived mutants.
 
-# Table of Contents
+**Table of Contents**
 
 
 ## Defining the genetic interval encompassing *Srs1*
@@ -414,6 +414,7 @@ TGCTCCTGTTGAACTAAAACTGTTTCAAATAAATTTGATAAAAATGCCACAAAATACTGTGAGACCCTCTGATGTGTATA
 ```
 
 ### Does loss of *Srs1* lead to increased expression of *Lr34*?
+*Med15* has been proposed to have a regulatory role on ABC transporters in yeast. Therefore, an interesting question was whether loss of *Srs1* modulate the expression level of *Lr34*?
 
 ```bash
 cat chr7A_50000000_50100000.fa chr7D_47400000_47430000.fa > Lr34.fa
@@ -441,22 +442,105 @@ samtools rmdup Lr34_NS2N_RNAseq.sorted.bam Lr34_NS2N_RNAseq.sorted.rmdup.bam
 
 ### *Lr34*
 
+**Table.** Physical regions encompassing *Lr34* and homeologs in wheat.
 |Gene           |Chromosome|Start   |End     |
 |:-------------:|:--------:|:------:|:------:|
 |*Lr34* homeolog|    7A    |50000000|50100000|
 |*Lr34*         |    7D    |47400000|47430000|
 
-Read coverage of Lr34 and homeolog
-Gene	Canthatch	NS1	NS2
-Lr34	1599	864	792
-Reads	41000991	29237025	27664945
+**Table.** Read coverage of Lr34 and homeolog
+|Gene |Canthatch|NS1     |NS2     |
+|:---:|:-------:|:------:|:------:|
+|Lr34 |1599     |864     |792     |
+|Reads|41000991 |29237025|27664945|
 
 
-## Phylogenetic and diversity analysis of *Med15* gene family
-To understand the evolution of the *Med15*, we identified homologs in several grass species.
+## Assessment of chromosome flow sorting enrichment
+To assess the quality of the chromosome flow sorting with respect to chromosome 7D, we aligned reads to a masked sequence of chromosome 7D (v0.4) from the [IWGSC](https://www.wheatgenome.org/). Alignments were made with default parameters for `bwa` with the requirement of mapped paired reads. A window of 100 kb was used to scan coverage across the chromosome based on the script `QKutilities_genome_coverage.py`.
 
 ```bash
-prank -d=Med15_phylogeny.fa -o=Med15_phylogeny.phy -f=phylips -DNA -codon
+RepeatMasker -species monocotyledons chr7D.fa
+
+bwa index chr7D.fa.masked
+
+bwa aln -t 4 chr7D.fa.masked Can.7DL_gDNA_forward_paired.fq.gz > chr7D_Can7DL_1_1.aln
+bwa aln -t 4 chr7D.fa.masked Can.7DL_gDNA_reverse_paired.fq.gz > chr7D_Can7DL_1_2.aln
+bwa sampe -a 1000 chr7D.fa.masked chr7D_Can7DL_1_1.aln chr7D_Can7DL_1_2.aln Can.7DL_gDNA_forward_paired.fq.gz Can.7DL_gDNA_reverse_paired.fq.gz > chr7D_Can7DL_1.sam
+
+samtools view -f2 -Shub -o chr7D_Can7DL_1.bam chr7D_Can7DL_1.sam
+samtools sort chr7D_Can7DL_1.bam chr7D_Can7DL_1_sorted
+samtools rmdup chr7D_Can7DL_1_sorted.bam chr7D_Can7DL_1_sorted.rmdup.bam
+
+bwa aln -t 4 chr7D.fa.masked Can.7DL_2_gDNA_forward_paired.fq.gz > chr7D_Can7DL_2_1.aln
+bwa aln -t 4 chr7D.fa.masked Can.7DL_2_gDNA_reverse_paired.fq.gz > chr7D_Can7DL_2_2.aln
+bwa sampe -a 1000 chr7D.fa.masked chr7D_Can7DL_2_1.aln chr7D_Can7DL_2_2.aln Can.7DL_2_gDNA_forward_paired.fq.gz Can.7DL_2_gDNA_reverse_paired.fq.gz > chr7D_Can7DL_2.sam
+
+samtools view -f2 -Shub -o chr7D_Can7DL_2.bam chr7D_Can7DL_2.sam
+samtools sort chr7D_Can7DL_2.bam chr7D_Can7DL_2_sorted
+samtools rmdup chr7D_Can7DL_2_sorted.bam chr7D_Can7DL_2_sorted.rmdup.bam
+
+samtools merge chr7D_Can7DL_sorted.rmdup.bam chr7D_Can7DL_1_sorted.rmdup.bam chr7D_Can7DL_2_sorted.rmdup.bam
+
+bedtools genomecov -d -split -ibam chr7D_Can7DL_sorted.rmdup.bam > chr7D_Can7DL_sorted.rmdup.genomecov.txt 
+
+python QKutilities_genome_coverage.py -c chr7D_Can7DL_sorted.rmdup.genomecov.txt -f chr7D.fa.masked -o chr7D_Can7DL_sorted.rmdup.genomecov.w100000.txt -w 100000
+```
+
+Plots were made using `R`, using cubic splines (`smooth.spline` function) to create smooth curves.
+
+```R
+palette = c("#D55E00", "#F0E442", "#009E73", "#E69F00", "#56B4E9")
+
+postscript(file="chr7D.Canthatch.analysis.ps", width=8, height=4)
+
+# import data from QKutilities_genome_coverage.py
+# Canthatch 7D
+data = read.table(file="chr7D_CanK_sorted.rmdup.genomecov.w100000.txt", header=T)
+data = data.frame(data)
+
+plot(data$window, data$coverage, type="n", ylim=c(0,50), xlab="Window (100 kb)", ylab="Coverage")
+lines(with(data, smooth.spline(window, coverage)), col=palette[1])
+
+# Canthatch 7DL
+data = read.table(file="chr7D_Can7DL_sorted.rmdup.genomecov.w100000.txt", header=T)
+data = data.frame(data)
+
+lines(with(data, smooth.spline(window, coverage)), col=palette[2])
+
+# NS1M
+data = read.table(file="chr7D_NS1M_sorted.rmdup.genomecov.w100000.txt", header=T)
+data = data.frame(data)
+
+lines(with(data, smooth.spline(window, coverage)), col=palette[3])
+#points(data$window, data$coverage, pch=16, cex=0.4, col="black")
+
+# NS2N
+data = read.table(file="chr7D_NS2N_sorted.rmdup.genomecov.w100000.txt", header=T)
+data = data.frame(data)
+
+lines(with(data, smooth.spline(window, coverage)), col=palette[4])
+
+# Thatcher
+data = read.table(file="chr7D_Thatcher_sorted.rmdup.genomecov.w100000.txt", header=T)
+data = data.frame(data)
+
+lines(with(data, smooth.spline(window, coverage)), col=palette[5])
+
+# import masking information
+data = read.table(file="chr7D.fa.masked.w100000.coverage", header=T)
+data = data.frame(data)
+
+lines(with(data, smooth.spline(window, (masking / 100000) * 50)), col="black")
+axis(4, at=c(0,10,20,30,40,50), labels=c(0, 0.2, 0.4, 0.6, 0.8, 1.0))
+
+dev.off()
+```
+
+## Phylogenetic and diversity analysis of *Med15* gene family
+To understand the evolution of the *Med15*, we identified homologs in several grass species and generated several phylogenetic trees for the gene family. First, we included a diverse array of species spanning the monocots using banana as an outgroup.
+
+```bash
+prank -d=Med15_phylogeny.fa -o=Med15_phylogeny_Ma_outgroup.phy -f=phylips -DNA -codon
 raxml -s Med15_phylogeny.phy -n Med15_Ma_outgroup -m GTRCAT -o MaMed15 -p 15658436543243 -T 4
 raxml -s Med15_phylogeny.phy -n Med15_Ma_outgroup_bootstrap_r1 -m GTRCAT -o MaMed15 -N 1000 -p 437189534321 -T 4
 cat RAxML_parsimonyTree.Med15_Ma_outgroup_bootstrap_r* > allBootstraps
@@ -464,12 +548,69 @@ raxml -z allBootstraps -m GTRCAT -I autoMRE -n TEST -p 38741289345
 raxml -f b -z allBootstraps -t RAxML_result.Med15_Ma_outgroup -m GTRCAT -n Med15_Ma_outgroup_labels
 ```
 
-Do HvMed15a and HvMed15b assemble independently in barley leaf transcriptome?
+```bash
+prank -d=Med15_phylogeny_Os_outgroup.fa -o=Med15_phylogeny_Os_outgroup.phy -f=phylips -DNA -codon
+raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup -m GTRCAT -o OsMed15 -p 15658436543243 -T 4
+raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup_bootstrap_r1 -m GTRCAT -o OsMed15 -N 1000 -p 437189534321 -T 4
+raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup_bootstrap_r2 -m GTRCAT -o OsMed15 -N 1000 -p 478329106432 -T 4
+cat RAxML_parsimonyTree.Med15_Os_outgroup_bootstrap_r* > allBootstraps
+raxml -z allBootstraps -m GTRCAT -I autoMRE -n TEST -p 38741289345
+raxml -f b -z allBootstraps -t RAxML_result.Med15_Os_outgroup -m GTRCAT -n Med15_Os_outgroup_labels
+```
+
+```bash
+prank -d=Med15_phylogeny_Os_outgroup_complete.fa -o=Med15_phylogeny_Os_outgroup_complete.phy -f=phylips -DNA -codon
+raxml -f a -x 563489205324 -p 43671230421 -# 10000 -m GTRCAT -s Med15_phylogeny_Os_outgroup_complete.phy -n Med15_phylogeny_Os_outgroup_complete -T 4
+raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoMRE -n TEST -p 38741289345
+```
+
+```bash
+prank -d=Med15_phylogeny_Os_outgroup_b80.fa -o=Med15_phylogeny_Os_outgroup_b80.phy -f=phylips -DNA -codon
+raxml -f a -x 784953475893 -p 44966321296 -# 10000 -m GTRCAT -s Med15_phylogeny_Os_outgroup_b80.phy -o OsMed15 -n Med15_phylogeny_Os_outgroup_b80 -T 4
+raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoMRE -n TEST -p 38741289345
+```
+
+```bash
+muscle -in Med15_phylogeny_Os_outgroup_pep.fa -out Med15_phylogeny_Os_outgroup_pep.aln -clwstrict
+raxml -f a -x 563489205324 -p 43671230421 -# 10000 -m PROTGAMMAAUTO -s Med15_phylogeny_Os_outgroup_complete.phy -n Med15_phylogeny_Os_outgroup_complete -T 4
+raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoMRE -n TEST -p 38741289345
+```
 
 ### Natural variation in *Med15* in *Aegilops tauschii*
 
 ```bash
 ~/src/hisat2-2.0.5/hisat2-build chr7D_Med15.fa chr7D_Med15
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058959_1.fastq.gz ~/temp/DRR058959_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_AT76
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058960_1.fastq.gz ~/temp/DRR058960_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_KU-2003
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058961_1.fastq.gz ~/temp/DRR058961_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_KU-2025
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058962_1.fastq.gz ~/temp/DRR058962_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_KU-2075
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058963_1.fastq.gz ~/temp/DRR058963_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_KU-2078
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058964_1.fastq.gz ~/temp/DRR058964_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_KU-2087
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058965_1.fastq.gz ~/temp/DRR058965_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_KU-2093
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058966_1.fastq.gz ~/temp/DRR058966_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_KU-2124
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058967_1.fastq.gz ~/temp/DRR058967_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_KU-2627
+
+tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058968_1.fastq.gz ~/temp/DRR058968_2.fastq.gz
+mv tophat_out tophat_out_Med15bD_PI499262
+
 
 ~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058959_1.fastq.gz -2 ~/temp/DRR058959_2.fastq.gz -S AetMed15_AT76_RNAseq.sam
 samtools view -f 2 -Shub AetMed15_AT76_RNAseq.sam > AetMed15_AT76_RNAseq.bam
@@ -523,9 +664,11 @@ samtools rmdup AetMed15_PI499262_RNAseq_sorted.bam AetMed15_PI499262_RNAseq_sort
 ```
 
 ### RNAseq coverage over *TaMed15.7DL*
+```bash
 bedtools genomecov -d -split -ibam Med15_Can_RNAseq.sorted.rmdup.bam > Med15_Can.7DL.sorted.rmdup.genomecov.txt
 bedtools genomecov -d -split -ibam Med15_NS1M_RNAseq.sorted.rmdup.bam > Med15_NS1M.7DL.sorted.rmdup.genomecov.txt
 bedtools genomecov -d -split -ibam Med15_NS2N_RNAseq.sorted.rmdup.bam > Med15_NS2N.7DL.sorted.rmdup.genomecov.txt
+```
 
 Note: In Trinity assembly of Canthatch, all three homeologs of collapse into a single RNAseq contig
 
@@ -542,6 +685,18 @@ data = data.frame(data)
 ggplot(data, aes(position, normexpression, color=genotype)) + geom_area(aes(fill=genotype)) + scale_fill_manual(values=cbPalette) + scale_color_manual(values=cbPalette)
 
 ggsave("Med15_RNAseq.eps", width=10, height=4)
+```
+
+### Investigating the *Med15* gene family in *Bromus inermis*
+Using BLAST, the Trinity assembled contig `Bi_DN324220_c2_g1_i2` was identified that encoded a *Med15* gene family member in *Bromus inermis*. No additional matches were identifed in the assembly, suggest that (1) there is only one copy of *Med15* in *Bromus inermis*, (2) one copy is more highly expressed than the other and did not have sufficient read coverage, or (3) the second copy collapsed within the first copy due to near-identical sequence.
+
+```bash
+bowtie2-build BiMed15.fa BiMed15
+bowtie2 -x BiMed15 -1 SRR3087621_1.fastq.gz -2 SRR3087621_2.fastq.gz -S BiMed15_Bi_RNAseq.sam
+samtools view -F 4 -Shub -o BiMed15_Bi_RNAseq.bam BiMed15_Bi_RNAseq.sam
+samtools sort BiMed15_Bi_RNAseq.bam BiMed15_Bi_RNAseq_sorted
+
+tophat2 -N 1 -p 4 BiMed15 ~/temp/SRR3087621_1.fastq.gz ~/temp/SRR3087621_2.fastq.gz
 ```
 
 ### RNAseq analysis of differentially expressed genes in Canthatch, NS1, and NS2
