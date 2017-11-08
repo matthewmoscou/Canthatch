@@ -1,6 +1,6 @@
       seqfile = Med15_phylogeny_Os_outgroup_b90.phy   * sequence data filename
-     treefile = RAxML_bestTree.Med15_phylogeny_Os_outgroup_b90_H2c      * tree structure file name
-      outfile = results.H2c.txt   * main result file name
+     treefile = RAxML_bestTree.Med15_phylogeny_Os_outgroup_b90_H2a      * tree structure file name
+      outfile = results.H2a.txt   * main result file name
 
         noisy = 1      * 0,1,2,3,9: how much rubbish on the screen
       verbose = 1      * 1:detailed output
@@ -24,10 +24,3 @@
         omega = 0.2    * initial omega
 
     cleandata = 1  * remove sites with ambiguity data (1:yes, 0:no)?
-	
-
-                       * comments:
-                       * H0 in Table 3: model = 0
-                       * H1 in Table 3: model = 2
-                       * H2 in Table 3: model = 2
-                       * H3 in Table 3: model = 2

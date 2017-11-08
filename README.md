@@ -329,134 +329,8 @@ python QKgenome_conversion.py 10 80.0 chr7D_621250000_622360000_Canthatch.fa chr
 
 Very few EMS generated SNPs exist within the region. The alignment based strategy was found to overpredict SNPs, predominantly in repetitive regions. In contrast, alignment of *de novo* assemblies spanned the majority of the *Srs1* interval for Canthatch, NS1, and NS2. The majority of the alignments exhibited perfect identity (100%) to Chinese Spring.
 
-### Gene expression of the homeologous *Med15a* gene family
-Initial mapping of RNAseq reads was performed using `HISAT2`.
-
-```bash
-./hisat2-2.1.0/hisat2-build chr7ABD_Med15.fa chr7ABD_Med15
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Med15_Can_RNAseq.sam
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Med15_NS1M_RNAseq.sam
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Med15_NS2N_RNAseq.sam
-```
-
-The challenge with the hexaploid genome is aligning reads that specifically map to individual sub-genomes. The initial `HISAT2` run was used to identify reads mapping to the Med15 7DL gene family. Next, we extract the aligned RNAseq reads and realign them using `tophat2` using highlt stringent parameters (`-N 0`, *i.e.* no differences between the read and the reference).
-
-```bash
-samtools view -F 4 -Shub -o Med15_Can_RNAseq.bam Med15_Can_RNAseq.sam
-samtools sort Med15_Can_RNAseq.bam Med15_Can_RNAseq.sorted
-samtools rmdup Med15_Can_RNAseq.sorted.bam Med15_Can_RNAseq.sorted.rmdup.bam
-
-samtools view -F 4 -Shub -o Med15_NS1M_RNAseq.bam Med15_NS1M_RNAseq.sam
-samtools sort Med15_NS1M_RNAseq.bam Med15_NS1M_RNAseq.sorted
-samtools rmdup Med15_NS1M_RNAseq.sorted.bam Med15_NS1M_RNAseq.sorted.rmdup.bam
-
-samtools view -F 4 -Shub -o Med15_NS2N_RNAseq.bam Med15_NS2N_RNAseq.sam
-samtools sort Med15_NS2N_RNAseq.bam Med15_NS2N_RNAseq.sorted
-samtools rmdup Med15_NS2N_RNAseq.sorted.bam Med15_NS2N_RNAseq.sorted.rmdup.bam
-
-java -jar picard.jar SamToFastq I=Med15_Can_RNAseq.sorted.rmdup.pairs.bam FASTQ=Med15_Can_RNAseq_1.fastq SECOND_END_FASTQ=Med15_Can_RNAseq_2.fastq UNPAIRED_FASTQ=temp.fastq
-
-bowtie2-build chr7ABD_Med15.fa chr7ABD_Med15
-tophat2 -N 0 -p 4 --report-secondary-alignments chr7ABD_Med15 Med15_Can_RNAseq_1.fastq Med15_Can_RNAseq_2.fastq
-featureCounts -T 4 -M -O -t exon -g ID -a chr7ABD.gff3 -o Med15_Can_RNAseq.sorted.rmdup.tophat2_readCounts.txt tophat_out/accepted_hits.bam
-```
-
-After this initial run, we found that several regions within all Med15.7L genes lacked mapped reads. This was due to SNPs between Canthatch and Chinese Spring alleles. Manual curation using `HISAT2` aligned RNAseq reads was used to convert the coding sequences for *Med15.7AL* and *Med15.7BL* from Chinese Spring to Canthatch. The `QKgenome` pipeline was used to curate *Med15.7DL*. `HISAT2` was performed again to identify reads mapping to the Med15 7DL gene family. We extract the aligned RNAseq reads and realigned them using `tophat2` using highlt stringent parameters (`-N 0`, *i.e.* no differences between the read and the reference).
-
-```bash
-./hisat2-2.1.0/hisat2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Med15_Can_Can_RNAseq.sam
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Med15_Can_NS1M_RNAseq.sam
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Med15_Can_NS2N_RNAseq.sam
-
-samtools view -F 4 -Shub -o Med15_Can_Can_RNAseq.bam Med15_Can_Can_RNAseq.sam
-samtools sort Med15_Can_Can_RNAseq.bam Med15_Can_Can_RNAseq.sorted
-samtools rmdup Med15_Can_Can_RNAseq.sorted.bam Med15_Can_Can_RNAseq.sorted.rmdup.bam
-
-samtools view -F 4 -Shub -o Med15_Can_NS1M_RNAseq.bam Med15_Can_NS1M_RNAseq.sam
-samtools sort Med15_Can_NS1M_RNAseq.bam Med15_Can_NS1M_RNAseq.sorted
-samtools rmdup Med15_Can_NS1M_RNAseq.sorted.bam Med15_Can_NS1M_RNAseq.sorted.rmdup.bam
-
-samtools view -F 4 -Shub -o Med15_Can_NS2N_RNAseq.bam Med15_Can_NS2N_RNAseq.sam
-samtools sort Med15_Can_NS2N_RNAseq.bam Med15_Can_NS2N_RNAseq.sorted
-samtools rmdup Med15_Can_NS2N_RNAseq.sorted.bam Med15_Can_NS2N_RNAseq.sorted.rmdup.bam
-
-java -jar picard.jar SamToFastq I=Med15_Can_Can_RNAseq.sorted.rmdup.pairs.bam FASTQ=Med15_Can_Can_RNAseq_1.fastq SECOND_END_FASTQ=Med15_Can_Can_RNAseq_2.fastq UNPAIRED_FASTQ=temp.fastq
-
-bowtie2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
-tophat2 -N 0 -p 4 --report-secondary-alignments Med15_7L_Canthatch Med15_Can_Can_RNAseq_1.fastq Med15_Can_Can_RNAseq_2.fastq
-```
-
-RNAseq alignments confirmed exon/intron junctions for all three homeologs. For *Med15.7BL*, RNAseq reads only supported the gene model TraesCS7B01G460900.1. For *Med15.7DL*, RNAseq reads only supported the gene model TraesCS7D01G526100.1, but not TraesCS7D01G526100.2.
-
-### SNPs within the *Srs1* interval
-Sequence flanking mutations in the *Srs1* interval identified using aligned *de novo* assemblies.
-
-```
->NS2_158661
-CGCCTCCGCCTCCGTGTACATGGTGACGCGAGGTGAGTCAAACTCAATGTCACTTGGGATGACGGCCTCGGCACCGTACACGAGGAAGAATGGAGTGAAGYCGGTTGATTTGTTCGAAGTGGTACGGAGGCTCCAGAGGACGGCCGGCAGCTCGTCGATCCAGCAGTCGGCCGACCGCTCCAGTGGCTCGACCAGTCGGGG
->NS2_390486
-CGGGAGCTATTTGTTGCACATCCCAGTTATTTTTCACATTTAGTATATACATACATAATGTAAGTTAGGGCAAGTTCTTTAGGGCAGCTTAAAAATTAAGYTGCCTCTCCCCAGCTTAAAAAATAATCCGTCCTCTAAGTTTGTTGAGACTTCTAAATTAGCTATTTCATAACTAGTTTAGAAGCCCCAATGAACAAGAGA
->NS1_393242
-ATCGATGTCTTCGCTGGTGGTGGTGCGGTGAAGAACGTCGGCGGGGTCGTAGTGAAGGAGGCTGGCGGTGGCATGGCCATTGTCGCCCTCGGCTTGTTCGYTGCCGCCCGGCATGCCGCCTCCATTCTCTCCCACGGCGCCGGCGGGGATGGGACACGTGCTTAGCGGTGCTCCTGGCCTGGGTGTCACCGCCGGCTGAGG
->NS1_394896
-GCCACAACAATTGGGCTCTCAGGCAAACATGTCAAGTTTACAGCAGCAGCAACAAAATCAACAGCAGCAGCGGATGCATATGCTACAAATGAAAGCTCAGYAAACGCAGCAACAACAGCATGCTCAACAACCACCAATGGGTTTGATGCAACCTCAGTCCCAACACAACCAACTTCAGCAATCGCAGCAACATCTTATGTC
->NS2_397520
-CTCCATGCAAGCAAATGCAAGTTCATTACAGCAGCTGAAGCAGCAACAGCAGGATCATCATATGATGCAGAGTCAGCAAATGAAGCGTCAGATGTTTCAGYAGTACCAGCAAAAGCAACAAATGCTTCAACAGCAGTTCCCAATACAGCAACAATTACAGAAACAGCAGCAAGTACAGATGCAGGTTCCACAGCTTCATGC
->NS1_483619
-ACACTCCGAGTTTGCGCAGCTGGGTGAGTTTGTTGAGCTCTTTGACGATGTCCTTCCCGCCTGAAGCACCAATGTTGACAACACCGAGCGTGTGCAATGCYGTCAGTTCACCAATCCTGCTTGGCACTACAACACCAACTAGGCGACGACATCTGCGGAACTCCGGCAAGAAGCTAGTTGAGGCATCTGGCGTTGATGCTG
->NS2_569625
-TATAGGTACATCCATTTTTGGACAAATGAAAGCCAAGTATTTTGGAACGGAGGGAGTAGAACTGAACTTTTTGGTTTTGTGAATGAAATTGGGGAGATATYGCTTTCTTCAACAAATAAATGATCACCCAGAACAAATACATTTTAAAATTATTTTAATATGGAGTACCGCAATATAATCAGTAGATTAGGTTGGGTTGCG
->NS2_906749
-TTTATAATCAGGTCAGATAGTCATTTTGTAAACATAAGCTTAGTGTAGGGCATGTGGTTACCTACATGCCCTACACTAAGCTTGTGTTTTCCGGTGCTCGYCTTTTTTCTTACCATTTTGGCATTTGTTTTCTTGTTGTTTTCTAGTCGAATGACTCATCTACTCTATTAGTATGGTTATATGCATAAGATATTTCGATCA
->NS1_1093857
-TGCTCCTGTTGAACTAAAACTGTTTCAAATAAATTTGATAAAAATGCCACAAAATACTGTGAGACCCTCTGATGTGTATAGATCACTTTTAGGTAAAAATYCATCTTGTTCATTTGAAAAGTTTGGCCACAACATTCTACCATGGCATTACGAAAGTTTGCCACAGCATTACTAAAGTTTGCCACAACATTACTAAAGTTC
-```
-
-### Does loss of *Srs1* lead to increased expression of *Lr34*?
-*Med15* has been proposed to have a regulatory role on ABC transporters in yeast. Therefore, an interesting question was whether loss of *Srs1* modulate the expression level of *Lr34*?
-
-```bash
-cat chr7A_50000000_50100000.fa chr7D_47400000_47430000.fa > Lr34.fa
-
-./hisat2-2.1.0/hisat2-build Lr34.fa Lr34
-
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Lr34_Can_RNAseq.sam
-
-samtools view -f2 -Shub -o Lr34_Can_RNAseq.bam Lr34_Can_RNAseq.sam
-samtools sort Lr34_Can_RNAseq.bam Lr34_Can_RNAseq.sorted
-samtools rmdup Lr34_Can_RNAseq.sorted.bam Lr34_Can_RNAseq.sorted.rmdup.bam
-
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Lr34_NS1M_RNAseq.sam
-
-samtools view -f2 -Shub -o Lr34_NS1M_RNAseq.bam Lr34_NS1M_RNAseq.sam
-samtools sort Lr34_NS1M_RNAseq.bam Lr34_NS1M_RNAseq.sorted
-samtools rmdup Lr34_NS1M_RNAseq.sorted.bam Lr34_NS1M_RNAseq.sorted.rmdup.bam
-
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Lr34_NS2N_RNAseq.sam
-
-samtools view -f2 -Shub -o Lr34_NS2N_RNAseq.bam Lr34_NS2N_RNAseq.sam
-samtools sort Lr34_NS2N_RNAseq.bam Lr34_NS2N_RNAseq.sorted
-samtools rmdup Lr34_NS2N_RNAseq.sorted.bam Lr34_NS2N_RNAseq.sorted.rmdup.bam
-```
-
-### *Lr34*
-
-**Table.** Physical regions encompassing *Lr34* and homeologs in wheat.
-|Gene           |Chromosome|Start   |End     |
-|:-------------:|:--------:|:------:|:------:|
-|*Lr34* homeolog|    7A    |50000000|50100000|
-|*Lr34*         |    7D    |47400000|47430000|
-
-**Table.** Read coverage of Lr34 and homeolog
-|Gene |Canthatch|NS1     |NS2     |
-|:---:|:-------:|:------:|:------:|
-|Lr34 |1599     |864     |792     |
-|Reads|41000991 |29237025|27664945|
-
-
 ## Assessment of chromosome flow sorting enrichment
-To assess the quality of the chromosome flow sorting with respect to chromosome 7D, we aligned reads to a masked sequence of chromosome 7D (v0.4) from the [IWGSC](https://www.wheatgenome.org/). Alignments were made with default parameters for `bwa` with the requirement of mapped paired reads. A window of 100 kb was used to scan coverage across the chromosome based on the script `QKutilities_genome_coverage.py`.
+To assess the quality of the chromosome flow sorting with respect to chromosome 7D, we aligned reads to a masked sequence of chromosome 7D (v1.0) from the [IWGSC](https://www.wheatgenome.org/). Alignments were made with default parameters for `bwa` with the requirement of mapped paired reads. A window of 100 kb was used to scan coverage across the chromosome based on the script `QKutilities_genome_coverage.py`.
 
 ```bash
 RepeatMasker -species monocotyledons chr7D.fa
@@ -536,47 +410,112 @@ axis(4, at=c(0,10,20,30,40,50), labels=c(0, 0.2, 0.4, 0.6, 0.8, 1.0))
 dev.off()
 ```
 
-## Phylogenetic and diversity analysis of *Med15* gene family
-To understand the evolution of the *Med15*, we identified homologs in several grass species and generated several phylogenetic trees for the gene family. First, we included a diverse array of species spanning the monocots using banana as an outgroup.
+## Expression analysis of Canthatch and mutants
+### Gene expression of the homeologous *Med15b* gene family
+Initial mapping of RNAseq reads was performed using `HISAT2`.
 
 ```bash
-prank -d=Med15_phylogeny.fa -o=Med15_phylogeny_Ma_outgroup.phy -f=phylips -DNA -codon
-raxml -s Med15_phylogeny.phy -n Med15_Ma_outgroup -m GTRCAT -o MaMed15 -p 15658436543243 -T 4
-raxml -s Med15_phylogeny.phy -n Med15_Ma_outgroup_bootstrap_r1 -m GTRCAT -o MaMed15 -N 1000 -p 437189534321 -T 4
-cat RAxML_parsimonyTree.Med15_Ma_outgroup_bootstrap_r* > allBootstraps
-raxml -z allBootstraps -m GTRCAT -I autoMRE -n TEST -p 38741289345
-raxml -f b -z allBootstraps -t RAxML_result.Med15_Ma_outgroup -m GTRCAT -n Med15_Ma_outgroup_labels
+./hisat2-2.1.0/hisat2-build chr7ABD_Med15.fa chr7ABD_Med15
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Med15_Can_RNAseq.sam
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Med15_NS1M_RNAseq.sam
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x chr7ABD_Med15 -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Med15_NS2N_RNAseq.sam
 ```
 
-```bash
-prank -d=Med15_phylogeny_Os_outgroup.fa -o=Med15_phylogeny_Os_outgroup.phy -f=phylips -DNA -codon
-raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup -m GTRCAT -o OsMed15 -p 15658436543243 -T 4
-raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup_bootstrap_r1 -m GTRCAT -o OsMed15 -N 1000 -p 437189534321 -T 4
-raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup_bootstrap_r2 -m GTRCAT -o OsMed15 -N 1000 -p 478329106432 -T 4
-cat RAxML_parsimonyTree.Med15_Os_outgroup_bootstrap_r* > allBootstraps
-raxml -z allBootstraps -m GTRCAT -I autoMRE -n TEST -p 38741289345
-raxml -f b -z allBootstraps -t RAxML_result.Med15_Os_outgroup -m GTRCAT -n Med15_Os_outgroup_labels
-```
+The challenge with the hexaploid genome is aligning reads that specifically map to individual sub-genomes. The initial `HISAT2` run was used to identify reads mapping to the Med15 7DL gene family. Next, we extract the aligned RNAseq reads and realign them using `tophat2` using highly stringent parameters (`-N 0`, *i.e.* no differences between the read and the reference).
 
 ```bash
-prank -d=Med15_phylogeny_Os_outgroup_complete.fa -o=Med15_phylogeny_Os_outgroup_complete.phy -f=phylips -DNA -codon
-raxml -f a -x 563489205324 -p 43671230421 -# 10000 -m GTRCAT -s Med15_phylogeny_Os_outgroup_complete.phy -n Med15_phylogeny_Os_outgroup_complete -T 4
-raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoMRE -n TEST -p 38741289345
+samtools view -F 4 -Shub -o Med15_Can_RNAseq.bam Med15_Can_RNAseq.sam
+samtools sort Med15_Can_RNAseq.bam Med15_Can_RNAseq.sorted
+samtools rmdup Med15_Can_RNAseq.sorted.bam Med15_Can_RNAseq.sorted.rmdup.bam
+
+samtools view -F 4 -Shub -o Med15_NS1M_RNAseq.bam Med15_NS1M_RNAseq.sam
+samtools sort Med15_NS1M_RNAseq.bam Med15_NS1M_RNAseq.sorted
+samtools rmdup Med15_NS1M_RNAseq.sorted.bam Med15_NS1M_RNAseq.sorted.rmdup.bam
+
+samtools view -F 4 -Shub -o Med15_NS2N_RNAseq.bam Med15_NS2N_RNAseq.sam
+samtools sort Med15_NS2N_RNAseq.bam Med15_NS2N_RNAseq.sorted
+samtools rmdup Med15_NS2N_RNAseq.sorted.bam Med15_NS2N_RNAseq.sorted.rmdup.bam
+
+java -jar picard.jar SamToFastq I=Med15_Can_RNAseq.sorted.rmdup.pairs.bam FASTQ=Med15_Can_RNAseq_1.fastq SECOND_END_FASTQ=Med15_Can_RNAseq_2.fastq UNPAIRED_FASTQ=temp.fastq
+
+bowtie2-build chr7ABD_Med15.fa chr7ABD_Med15
+tophat2 -N 0 -p 4 --report-secondary-alignments chr7ABD_Med15 Med15_Can_RNAseq_1.fastq Med15_Can_RNAseq_2.fastq
+featureCounts -T 4 -M -O -t exon -g ID -a chr7ABD.gff3 -o Med15_Can_RNAseq.sorted.rmdup.tophat2_readCounts.txt tophat_out/accepted_hits.bam
 ```
 
-```bash
-prank -d=Med15_phylogeny_Os_outgroup_b80.fa -o=Med15_phylogeny_Os_outgroup_b80.phy -f=phylips -DNA -codon
-raxml -f a -x 784953475893 -p 44966321296 -# 10000 -m GTRCAT -s Med15_phylogeny_Os_outgroup_b80.phy -o OsMed15 -n Med15_phylogeny_Os_outgroup_b80 -T 4
-raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoMRE -n TEST -p 38741289345
-```
+After this initial run, we found that several regions within all *Med15.7L* genes lacked mapped reads. This was due to SNPs between Canthatch and Chinese Spring alleles. Manual curation using `HISAT2` aligned RNAseq reads was used to convert the coding sequences for *Med15.7AL* and *Med15.7BL* from Chinese Spring to Canthatch. The `QKgenome` pipeline was used to curate *Med15.7DL*. `HISAT2` was performed again to identify reads mapping to the Med15 7DL gene family. We extract the aligned RNAseq reads and realigned them using `tophat2` using highlt stringent parameters (`-N 0`, *i.e.* no differences between the read and the reference).
 
 ```bash
-muscle -in Med15_phylogeny_Os_outgroup_pep.fa -out Med15_phylogeny_Os_outgroup_pep.aln -clwstrict
-raxml -f a -x 563489205324 -p 43671230421 -# 10000 -m PROTGAMMAAUTO -s Med15_phylogeny_Os_outgroup_complete.phy -n Med15_phylogeny_Os_outgroup_complete -T 4
-raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoMRE -n TEST -p 38741289345
+./hisat2-2.1.0/hisat2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Med15_Can_Can_RNAseq.sam
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Med15_Can_NS1M_RNAseq.sam
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Med15_7L_Canthatch -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Med15_Can_NS2N_RNAseq.sam
+
+samtools view -F 4 -Shub -o Med15_Can_Can_RNAseq.bam Med15_Can_Can_RNAseq.sam
+samtools sort Med15_Can_Can_RNAseq.bam Med15_Can_Can_RNAseq.sorted
+samtools rmdup Med15_Can_Can_RNAseq.sorted.bam Med15_Can_Can_RNAseq.sorted.rmdup.bam
+
+samtools view -F 4 -Shub -o Med15_Can_NS1M_RNAseq.bam Med15_Can_NS1M_RNAseq.sam
+samtools sort Med15_Can_NS1M_RNAseq.bam Med15_Can_NS1M_RNAseq.sorted
+samtools rmdup Med15_Can_NS1M_RNAseq.sorted.bam Med15_Can_NS1M_RNAseq.sorted.rmdup.bam
+
+samtools view -F 4 -Shub -o Med15_Can_NS2N_RNAseq.bam Med15_Can_NS2N_RNAseq.sam
+samtools sort Med15_Can_NS2N_RNAseq.bam Med15_Can_NS2N_RNAseq.sorted
+samtools rmdup Med15_Can_NS2N_RNAseq.sorted.bam Med15_Can_NS2N_RNAseq.sorted.rmdup.bam
+
+java -jar picard.jar SamToFastq I=Med15_Can_Can_RNAseq.sorted.rmdup.pairs.bam FASTQ=Med15_Can_Can_RNAseq_1.fastq SECOND_END_FASTQ=Med15_Can_Can_RNAseq_2.fastq UNPAIRED_FASTQ=temp.fastq
+
+bowtie2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
+tophat2 -N 0 -p 4 --report-secondary-alignments Med15_7L_Canthatch Med15_Can_Can_RNAseq_1.fastq Med15_Can_Can_RNAseq_2.fastq
 ```
+
+RNAseq alignments confirmed exon/intron junctions for all three homeologs. For *Med15.7BL*, RNAseq reads only supported the gene model TraesCS7B01G460900.1. For *Med15.7DL*, RNAseq reads only supported the gene model TraesCS7D01G526100.1, but not TraesCS7D01G526100.2.
+
+
+### Does loss of *Srs1* lead to increased expression of *Lr34*?
+*Med15* has been proposed to have a regulatory role on ABC transporters in yeast. Therefore, an interesting question was whether loss of *Srs1* modulate the expression level of *Lr34*?
+
+```bash
+cat chr7A_50000000_50100000.fa chr7D_47400000_47430000.fa > Lr34.fa
+
+./hisat2-2.1.0/hisat2-build Lr34.fa Lr34
+
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Lr34_Can_RNAseq.sam
+
+samtools view -f2 -Shub -o Lr34_Can_RNAseq.bam Lr34_Can_RNAseq.sam
+samtools sort Lr34_Can_RNAseq.bam Lr34_Can_RNAseq.sorted
+samtools rmdup Lr34_Can_RNAseq.sorted.bam Lr34_Can_RNAseq.sorted.rmdup.bam
+
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Lr34_NS1M_RNAseq.sam
+
+samtools view -f2 -Shub -o Lr34_NS1M_RNAseq.bam Lr34_NS1M_RNAseq.sam
+samtools sort Lr34_NS1M_RNAseq.bam Lr34_NS1M_RNAseq.sorted
+samtools rmdup Lr34_NS1M_RNAseq.sorted.bam Lr34_NS1M_RNAseq.sorted.rmdup.bam
+
+./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Lr34_NS2N_RNAseq.sam
+
+samtools view -f2 -Shub -o Lr34_NS2N_RNAseq.bam Lr34_NS2N_RNAseq.sam
+samtools sort Lr34_NS2N_RNAseq.bam Lr34_NS2N_RNAseq.sorted
+samtools rmdup Lr34_NS2N_RNAseq.sorted.bam Lr34_NS2N_RNAseq.sorted.rmdup.bam
+```
+
+**Table.** Physical regions encompassing *Lr34* and homeologs in wheat.
+|Gene           |Chromosome|Start   |End     |
+|:-------------:|:--------:|:------:|:------:|
+|*Lr34* homeolog|    7A    |50000000|50100000|
+|*Lr34*         |    7D    |47400000|47430000|
+
+**Table.** Read coverage of Lr34 and homeolog
+|Gene |Canthatch|NS1     |NS2     |
+|:---:|:-------:|:------:|:------:|
+|Lr34 |1599     |864     |792     |
+|Reads|41000991 |29237025|27664945|
+
+The results are unclear, as we need to have replicated data to see if lower expression of *Lr34* is real or an artefact of sampling.
+
 
 ### Natural variation in *Med15* in *Aegilops tauschii*
+We assessed the natural variation of *TaMed15.bD* in *Aegilops tauschii* through an alignment-based strategy of publically available RNAseq data.
 
 ```bash
 ~/src/hisat2-2.0.5/hisat2-build chr7D_Med15.fa chr7D_Med15
@@ -610,60 +549,9 @@ mv tophat_out tophat_out_Med15bD_KU-2627
 
 tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058968_1.fastq.gz ~/temp/DRR058968_2.fastq.gz
 mv tophat_out tophat_out_Med15bD_PI499262
-
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058959_1.fastq.gz -2 ~/temp/DRR058959_2.fastq.gz -S AetMed15_AT76_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_AT76_RNAseq.sam > AetMed15_AT76_RNAseq.bam
-samtools sort AetMed15_AT76_RNAseq.bam AetMed15_AT76_RNAseq_sorted
-samtools rmdup AetMed15_AT76_RNAseq_sorted.bam AetMed15_AT76_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058960_1.fastq.gz -2 ~/temp/DRR058960_2.fastq.gz -S AetMed15_KU-2003_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_KU-2003_RNAseq.sam > AetMed15_KU-2003_RNAseq.bam
-samtools sort AetMed15_KU-2003_RNAseq.bam AetMed15_KU-2003_RNAseq_sorted
-samtools rmdup AetMed15_KU-2003_RNAseq_sorted.bam AetMed15_KU-2003_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058961_1.fastq.gz -2 ~/temp/DRR058961_2.fastq.gz -S AetMed15_KU-2025_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_KU-2025_RNAseq.sam > AetMed15_KU-2025_RNAseq.bam
-samtools sort AetMed15_KU-2025_RNAseq.bam AetMed15_KU-2025_RNAseq_sorted
-samtools rmdup AetMed15_KU-2025_RNAseq_sorted.bam AetMed15_KU-2025_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058962_1.fastq.gz -2 ~/temp/DRR058962_2.fastq.gz -S AetMed15_KU-2075_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_KU-2075_RNAseq.sam > AetMed15_KU-2075_RNAseq.bam
-samtools sort AetMed15_KU-2075_RNAseq.bam AetMed15_KU-2075_RNAseq_sorted
-samtools rmdup AetMed15_KU-2075_RNAseq_sorted.bam AetMed15_KU-2075_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058963_1.fastq.gz -2 ~/temp/DRR058963_2.fastq.gz -S AetMed15_KU-2078_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_KU-2078_RNAseq.sam > AetMed15_KU-2078_RNAseq.bam
-samtools sort AetMed15_KU-2078_RNAseq.bam AetMed15_KU-2078_RNAseq_sorted
-samtools rmdup AetMed15_KU-2078_RNAseq_sorted.bam AetMed15_KU-2078_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058964_1.fastq.gz -2 ~/temp/DRR058964_2.fastq.gz -S AetMed15_KU-2087_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_KU-2087_RNAseq.sam > AetMed15_KU-2087_RNAseq.bam
-samtools sort AetMed15_KU-2087_RNAseq.bam AetMed15_KU-2087_RNAseq_sorted
-samtools rmdup AetMed15_KU-2087_RNAseq_sorted.bam AetMed15_KU-2087_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058965_1.fastq.gz -2 ~/temp/DRR058965_2.fastq.gz -S AetMed15_KU-2093_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_KU-2093_RNAseq.sam > AetMed15_KU-2093_RNAseq.bam
-samtools sort AetMed15_KU-2093_RNAseq.bam AetMed15_KU-2093_RNAseq_sorted
-samtools rmdup AetMed15_KU-2093_RNAseq_sorted.bam AetMed15_KU-2093_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058966_1.fastq.gz -2 ~/temp/DRR058966_2.fastq.gz -S AetMed15_KU-2124_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_KU-2124_RNAseq.sam > AetMed15_KU-2124_RNAseq.bam
-samtools sort AetMed15_KU-2124_RNAseq.bam AetMed15_KU-2124_RNAseq_sorted
-samtools rmdup AetMed15_KU-2124_RNAseq_sorted.bam AetMed15_KU-2124_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058967_1.fastq.gz -2 ~/temp/DRR058967_2.fastq.gz -S AetMed15_KU-2627_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_KU-2627_RNAseq.sam > AetMed15_KU-2627_RNAseq.bam
-samtools sort AetMed15_KU-2627_RNAseq.bam AetMed15_KU-2627_RNAseq_sorted
-samtools rmdup AetMed15_KU-2627_RNAseq_sorted.bam AetMed15_KU-2627_RNAseq_sorted_rmdup.bam
-
-~/src/hisat2-2.0.5/hisat2 --max-intronlen 20000 -p 4 -x chr7D_Med15 -1 ~/temp/DRR058968_1.fastq.gz -2 ~/temp/DRR058968_2.fastq.gz -S AetMed15_PI499262_RNAseq.sam
-samtools view -f 2 -Shub AetMed15_PI499262_RNAseq.sam > AetMed15_PI499262_RNAseq.bam
-samtools sort AetMed15_PI499262_RNAseq.bam AetMed15_PI499262_RNAseq_sorted
-samtools rmdup AetMed15_PI499262_RNAseq_sorted.bam AetMed15_PI499262_RNAseq_sorted_rmdup.bam
 ```
 
-### RNAseq coverage over *TaMed15.7DL*
+### RNAseq coverage over *TaMed15.bD*
 ```bash
 bedtools genomecov -d -split -ibam Med15_Can_RNAseq.sorted.rmdup.bam > Med15_Can.7DL.sorted.rmdup.genomecov.txt
 bedtools genomecov -d -split -ibam Med15_NS1M_RNAseq.sorted.rmdup.bam > Med15_NS1M.7DL.sorted.rmdup.genomecov.txt
@@ -699,18 +587,59 @@ samtools sort BiMed15_Bi_RNAseq.bam BiMed15_Bi_RNAseq_sorted
 tophat2 -N 1 -p 4 BiMed15 ~/temp/SRR3087621_1.fastq.gz ~/temp/SRR3087621_2.fastq.gz
 ```
 
-### RNAseq analysis of differentially expressed genes in Canthatch, NS1, and NS2
-Non-replicated data sets
-Assess the quality of the data
-Identify genes with large fold change differences
-Identify any trends in the data
-Justification of a large scale expression analysis
+## Protein annotation of *Med15b.D*
 
-Insert code for mapping
-Currently using averaged RPKM values
-Perhaps use RSEM instead according to Sebastian's labs paper?
+## Molecular evolution of *Med15* gene family
+### Phylogenetic and diversity analysis of *Med15* gene family
+To understand the evolution of the *Med15*, we identified homologs in several grass species and generated several phylogenetic trees for the gene family. First, we included a diverse array of species spanning the monocots using banana (*Musa acuminata*) as an outgroup.
 
-Need to modify merge_RNAseq_datasets.py to take any input/output identifier with OptParse
 ```bash
-python merge_RNAseq_datasets.py
+prank -d=Med15_phylogeny.fa -o=Med15_phylogeny_Ma_outgroup.phy -f=phylips -DNA -codon
+raxml -s Med15_phylogeny.phy -n Med15_Ma_outgroup -m GTRCAT -o MaMed15 -p 15658436543243 -T 4
+raxml -s Med15_phylogeny.phy -n Med15_Ma_outgroup_bootstrap_r1 -m GTRCAT -o MaMed15 -N 1000 -p 437189534321 -T 4
+cat RAxML_parsimonyTree.Med15_Ma_outgroup_bootstrap_r* > allBootstraps
+raxml -z allBootstraps -m GTRCAT -I autoMRE -n TEST -p 38741289345
+raxml -f b -z allBootstraps -t RAxML_result.Med15_Ma_outgroup -m GTRCAT -n Med15_Ma_outgroup_labels
 ```
+
+We observed that banana (*Ma*) has a highly divergent *Med15* homolog at 50-50% identity. We restricted our alignment to Poaceae species, using rice (*Oryza sativa*) as an outgroup, and generated a maximum likelihood phylogenetic tree.
+
+```bash
+prank -d=Med15_phylogeny_Os_outgroup.fa -o=Med15_phylogeny_Os_outgroup.phy -f=phylips -DNA -codon
+raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup -m GTRCAT -o OsMed15 -p 15658436543243 -T 4
+raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup_bootstrap_r1 -m GTRCAT -o OsMed15 -N 1000 -p 437189534321 -T 4
+raxml -s Med15_phylogeny_Os_outgroup.phy -n Med15_Os_outgroup_bootstrap_r2 -m GTRCAT -o OsMed15 -N 1000 -p 478329106432 -T 4
+cat RAxML_parsimonyTree.Med15_Os_outgroup_bootstrap_r* > allBootstraps
+raxml -z allBootstraps -m GTRCAT -I autoMRE -n TEST -p 38741289345
+raxml -f b -z allBootstraps -t RAxML_result.Med15_Os_outgroup -m GTRCAT -n Med15_Os_outgroup_labels
+```
+
+Next, we generated a phylogenetic tree using only *Med15* genes with full sequence.
+
+```bash
+prank -d=Med15_phylogeny_Os_outgroup_complete.fa -o=Med15_phylogeny_Os_outgroup_complete.phy -f=phylips -DNA -codon
+raxml -f a -x 563489205324 -p 43671230421 -# 10000 -m GTRCAT -s Med15_phylogeny_Os_outgroup_complete.phy -n Med15_phylogeny_Os_outgroup_complete -T 4
+raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoMRE -n TEST -p 38741289345
+```
+
+Next, we generated a phylogenetic tree using *Med15* genes with at least 90% coverage over the full alignment. This extended phylogenetic tree was used for molecular evolutionary analyses.
+
+```bash
+prank -d=Med15_phylogeny_Os_outgroup_b90.fa -o=Med15_phylogeny_Os_outgroup_b90.phy -f=phylips -DNA -codon
+raxml -f a -x 784953475893 -p 44966321296 -# 10000 -m GTRCAT -s Med15_phylogeny_Os_outgroup_b90.phy -o OsMed15 -n Med15_phylogeny_Os_outgroup_b90 -T 4
+raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoMRE -n TEST -p 38741289345
+```
+
+### dN/dS analysis of *Med15* gene family
+Etimation of ω (dN/dS)volutionary analyses was performed using PAML (v4.8). A reduced phylogenetic tree based on a requirement of 90% coverage was used for estimating ω (dN/dS), as several sequences lacked sufficient coverage of *Med1*5 due to truncated transcript assemblies. The final alignment used can be found in the folder `data/codeml/mutation_rate_Poaceae_b90`. Before running, several modifications were made to the phylogenetic tree [mutation_rate_Poaceae_b90](data/codeml/mutation_rate_Poaceae_b90/RAxML_bestTree.Med15_phylogeny_Os_outgroup_b90) by adding labels to branches that would be used in the branch analysis for estimating ω.
+
+```bash
+codeml codeml_H0.ctl
+codeml codeml_H1.ctl
+codeml codeml_H2a.ctl
+codeml codeml_H2b.ctl
+codeml codeml_H2c.ctl
+codeml codeml_H3.ctl
+```
+
+Results from this analysis can be found in the Excel file [mutation_rate_analysis_Poaceae_b90.xlsx](data/codeml/mutation_rate_Poaceae_b90/mutation_rate_analysis_Poaceae_b90.xlsx)
