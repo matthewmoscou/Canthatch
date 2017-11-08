@@ -588,6 +588,8 @@ tophat2 -N 1 -p 4 BiMed15 ~/temp/SRR3087621_1.fastq.gz ~/temp/SRR3087621_2.fastq
 ```
 
 ## Protein annotation of *Med15b.D*
+InterProScan and Phyre2 were used to identify conserved domains in *Med15b.D*. Marcoils, Pcoils, and Coils were used for coiled coil prediction. Lastly, QKutilities_protein_analysis.py from the [QKutilites](https://github.com/matthewmoscou/QKutilities) set of scripts was used to identify regions of *Med15b.D* saturated with specific amino acids (in this case, Glutamine). Results can be found in the folder `data/protein_composition`.
+
 
 ## Molecular evolution of *Med15* gene family
 ### Phylogenetic and diversity analysis of *Med15* gene family
@@ -631,7 +633,7 @@ raxml -z RAxML_bootstrap.Med15_phylogeny_Os_outgroup_complete -m GTRCAT -I autoM
 ```
 
 ### dN/dS analysis of *Med15* gene family
-Etimation of ω (dN/dS)volutionary analyses was performed using PAML (v4.8). A reduced phylogenetic tree based on a requirement of 90% coverage was used for estimating ω (dN/dS), as several sequences lacked sufficient coverage of *Med1*5 due to truncated transcript assemblies. The final alignment used can be found in the folder `data/codeml/mutation_rate_Poaceae_b90`. Before running, several modifications were made to the phylogenetic tree [mutation_rate_Poaceae_b90](data/codeml/mutation_rate_Poaceae_b90/RAxML_bestTree.Med15_phylogeny_Os_outgroup_b90) by adding labels to branches that would be used in the branch analysis for estimating ω.
+Etimation of ω (dN/dS)volutionary analyses was performed using PAML (v4.8). A reduced phylogenetic tree based on a requirement of 90% coverage was used for estimating ω (dN/dS), as several sequences lacked sufficient coverage of *Med1*5 due to truncated transcript assemblies. The final alignment used can be found in the folder `data/codeml/mutation_rate_Poaceae_b90`. Before running, several modifications were made to the [phylogenetic tree](data/codeml/mutation_rate_Poaceae_b90/RAxML_bestTree.Med15_phylogeny_Os_outgroup_b90) by adding labels to branches that would be used in the branch analysis for estimating ω.
 
 ```bash
 codeml codeml_H0.ctl
