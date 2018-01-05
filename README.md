@@ -2,7 +2,6 @@
 In 1980, Kerber and Green identified the presence of a suppressor of resistance in wheat to wheat stem rust (*Puccinia graminis* f. sp. *tritici*). Kerber and Green (1980) mapped the suppression to chromosome 7D, and Kerber (1991) established that a single locus conferred suppression on chromosome 7D. We set out to identify the suppressor gene in Canthatch by applying chromosome flow sorting and high throughput sequencing to Canthatch and two EMS-derived mutants.
 
 **Table of Contents**
-
       * [Defining the genetic interval encompassing <em>SuSr1</em>](#defining-the-genetic-interval-encompassing-susr1)  
          * [<em>De novo</em> assembly of Canthatch, NS1, and NS2 flow sorted chromosome arm 7DL reads](#de-novo-assembly-of-canthatch-ns1-and-ns2-flow-sorted-chromosome-arm-7dl-reads)  
          * [Identification of EMS generated SNPs in NS1 and NS2 relative to Canthatch](#identification-of-ems-generated-snps-in-ns1-and-ns2-relative-to-canthatch)  
