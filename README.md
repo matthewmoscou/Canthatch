@@ -2,7 +2,6 @@
 In 1980, Kerber and Green identified the presence of a suppressor of resistance in wheat to wheat stem rust (*Puccinia graminis* f. sp. *tritici*). Kerber and Green (1980) mapped the suppression to chromosome 7D, and Kerber (1991) established that a single locus conferred suppression on chromosome 7D. We set out to identify the suppressor gene in Canthatch by applying chromosome flow sorting and high throughput sequencing to Canthatch and two EMS-derived mutants.
 
 **Table of Contents**
-   * [Canthatch](#canthatch)
       * [Defining the genetic interval encompassing <em>SuSr1</em>](#defining-the-genetic-interval-encompassing-susr1)
          * [<em>De novo</em> assembly of Canthatch, NS1, and NS2 flow sorted chromosome arm 7DL reads](#de-novo-assembly-of-canthatch-ns1-and-ns2-flow-sorted-chromosome-arm-7dl-reads)
          * [Identification of EMS generated SNPs in NS1 and NS2 relative to Canthatch](#identification-of-ems-generated-snps-in-ns1-and-ns2-relative-to-canthatch)
@@ -17,7 +16,7 @@ In 1980, Kerber and Green identified the presence of a suppressor of resistance 
       * [Assessment of chromosome flow sorting enrichment](#assessment-of-chromosome-flow-sorting-enrichment)
       * [Expression analysis of Canthatch and mutants](#expression-analysis-of-canthatch-and-mutants)
          * [Gene expression of the homeologous <em>Med15b</em> gene family](#gene-expression-of-the-homeologous-med15b-gene-family)
-         * [Does loss of <em>SuSr1</em> lead to increased expression of <em>Lr34</em>?](#does-loss-of-susr1-lead-to-increased-expression-of-lr34)
+            * [RNAseq mapping to confirm expression of all six <em>Med15</em> genes](#rnaseq-mapping-to-confirm-expression-of-all-six-med15-genes)
          * [Natural variation in <em>Med15</em> in <em>Aegilops tauschii</em>](#natural-variation-in-med15-in-aegilops-tauschii)
          * [RNAseq coverage over <em>TaMed15.bD</em>](#rnaseq-coverage-over-tamed15bd)
          * [Investigating the <em>Med15</em> gene family in <em>Bromus inermis</em>](#investigating-the-med15-gene-family-in-bromus-inermis)
@@ -25,7 +24,6 @@ In 1980, Kerber and Green identified the presence of a suppressor of resistance 
       * [Molecular evolution of <em>Med15</em> gene family](#molecular-evolution-of-med15-gene-family)
          * [Phylogenetic and diversity analysis of <em>Med15</em> gene family](#phylogenetic-and-diversity-analysis-of-med15-gene-family)
          * [dN/dS analysis of <em>Med15</em> gene family](#dnds-analysis-of-med15-gene-family)
-
 
 ## Defining the genetic interval encompassing *SuSr1*
 Our initial approach was to identify SNPs along the long arm of chromosome 7D in order to develop SNP markers that will be applied to the Canthatch x NS1 and Canthatch x NS2 doubled-haploid mapping populations. We used an approach that integrates multiple data sets including *de novo* assembly of flow sorted chromosomes of Canthatch, RNAseq data derived from Canthatch, NS1, and NS2, alignment-based SNP calling, and the physical assembly of chromosome 7D from the IWGSC (NRGene assembly).
@@ -57,6 +55,12 @@ java -jar trimmomatic-0.36.jar PE -phred33 Tratcher_DDPL00007-w_H3223ALXX_L7_1.c
 java -jar trimmomatic-0.36.jar PE -phred33 Tratcher_DDPL00007-w_H3223ALXX_L8_1.clean.fq.gz Tratcher_DDPL00007-w_H3223ALXX_L8_2.clean.fq.gz Thatcher_2_gDNA_forward_paired.fq.gz Thatcher_2_gDNA_forward_unpaired.fq.gz Thatcher_2_gDNA_reverse_paired.fq.gz Thatcher_2_gDNA_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:150 > Thatcher_2.trimmomatic.run.log 2>&1 &
 
 java -jar trimmomatic-0.36.jar PE -phred33 Tratcher_DDPL00007-w_H3727ALXX_L2_1.clean.fq.gz Tratcher_DDPL00007-w_H3727ALXX_L2_2.clean.fq.gz Thatcher_3_gDNA_forward_paired.fq.gz Thatcher_3_gDNA_forward_unpaired.fq.gz Thatcher_3_gDNA_reverse_paired.fq.gz Thatcher_3_gDNA_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:150 > Thatcher_3.trimmomatic.run.log 2>&1 &
+
+java -jar trimmomatic-0.36.jar PE -phred33 TA_01918_1.fq TA_01918_2.fq Canthatch_RNAseq_forward_paired.fq Canthatch_RNAseq_forward_unpaired.fq Canthatch_RNAseq_reverse_paired.fq Canthatch_RNAseq_reverse_unpaired.fq ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:150 > Canthatch_RNAseq.trimmomatic.run.log 2>&1 &
+
+java -jar trimmomatic-0.36.jar PE -phred33 TA_01915_1.fq TA_01915_2.fq NS1_RNAseq_forward_paired.fq NS1_RNAseq_forward_unpaired.fq NS1_RNAseq_reverse_paired.fq NS1_RNAseq_reverse_unpaired.fq ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:150 > NS1_RNAseq.trimmomatic.run.log 2>&1 &
+
+java -jar trimmomatic-0.36.jar PE -phred33 TA_01916_1.fq TA_01916_2.fq NS2_RNAseq_forward_paired.fq NS2_RNAseq_forward_unpaired.fq NS2_RNAseq_reverse_paired.fq NS2_RNAseq_reverse_unpaired.fq ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:150 > NS2_RNAseq.trimmomatic.run.log 2>&1 &
 ```
 
 Next, we assembled individual chromosome arms genomes using `Edena` for Canthatch, NS1, and NS2.
@@ -466,7 +470,7 @@ tophat2 -N 0 -p 4 --report-secondary-alignments chr7ABD_Med15 Med15_Can_RNAseq_1
 featureCounts -T 4 -M -O -t exon -g ID -a chr7ABD.gff3 -o Med15_Can_RNAseq.sorted.rmdup.tophat2_readCounts.txt tophat_out/accepted_hits.bam
 ```
 
-After this initial run, we found that several regions within all *Med15.7L* genes lacked mapped reads. This was due to SNPs between Canthatch and Chinese Spring alleles. Manual curation using `HISAT2` aligned RNAseq reads was used to convert the coding sequences for *Med15.7AL* and *Med15.7BL* from Chinese Spring to Canthatch. The `QKgenome` pipeline was used to curate *Med15.7DL*. `HISAT2` was performed again to identify reads mapping to the Med15 7DL gene family. We extract the aligned RNAseq reads and realigned them using `tophat2` using highlt stringent parameters (`-N 0`, *i.e.* no differences between the read and the reference).
+After this initial run, we found that several regions within all *Med15.7L* (*Med15b*) genes lacked mapped reads. This was due to SNPs between Canthatch and Chinese Spring alleles. Manual curation using `HISAT2` aligned RNAseq reads was used to convert the coding sequences for *Med15.7AL* (*Med15b.A*) and *Med15.7BL* (*Med15b.B*) from Chinese Spring to Canthatch. The `QKgenome` pipeline was used to curate *Med15.7DL* (*Med15b.D*). `HISAT2` was performed again to identify reads mapping to the *Med15b* gene family. We extract the aligned RNAseq reads and realigned them using `tophat2` using highlt stringent parameters (`-N 0`, *i.e.* no differences between the read and the reference).
 
 ```bash
 ./hisat2-2.1.0/hisat2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
@@ -492,90 +496,25 @@ bowtie2-build Med15_7L_Canthatch.fa Med15_7L_Canthatch
 tophat2 -N 0 -p 4 --report-secondary-alignments Med15_7L_Canthatch Med15_Can_Can_RNAseq_1.fastq Med15_Can_Can_RNAseq_2.fastq
 ```
 
-RNAseq alignments confirmed exon/intron junctions for all three homeologs. For *Med15.7BL*, RNAseq reads only supported the gene model TraesCS7B01G460900.1. For *Med15.7DL*, RNAseq reads only supported the gene model TraesCS7D01G526100.1, but not TraesCS7D01G526100.2.
+RNAseq alignments confirmed exon/intron junctions for all three homeologs. For *Med15bB*, RNAseq reads only supported the gene model TraesCS7B01G460900.1. For *Med15b.D*, RNAseq reads only supported the gene model TraesCS7D01G526100.1, but not TraesCS7D01G526100.2.
 
-#### Replicated RNAseq mapping to confirm expression of all six *Med15* genes
+#### RNAseq mapping to confirm expression of all six *Med15* genes
+High stringent mapping was performed, requiring 100% identity and removal of all reads with ambiguous mapping. Further stringency was the requirement of properly paired reads.
 
 ```bash
 ./bin/bbmap/bbmap.sh ref=Med15_family.fa 
-./bin/bbmap/bbmap.sh in=Canthatch_R1_forward_paired.fq in2=Canthatch_R1_reverse_paired.fq out=Med15_family_Canthatch_R1.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_Canthatch_R1.log 2>&1 &
-./bin/bbmap/bbmap.sh in=Canthatch_R2_forward_paired.fq in2=Canthatch_R2_reverse_paired.fq out=Med15_family_Canthatch_R2.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_Canthatch_R2.log 2>&1 &
-./bin/bbmap/bbmap.sh in=Canthatch_R3_forward_paired.fq in2=Canthatch_R3_reverse_paired.fq out=Med15_family_Canthatch_R3.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_Canthatch_R3.log 2>&1 &
-./bin/bbmap/bbmap.sh in=NS1_R1_forward_paired.fq in2=NS1_R1_reverse_paired.fq out=Med15_family_NS1_R1.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_NS1_R1.log 2>&1 &
-./bin/bbmap/bbmap.sh in=NS1_R2_forward_paired.fq in2=NS1_R2_reverse_paired.fq out=Med15_family_NS1_R2.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_NS1_R2.log 2>&1 &
-./bin/bbmap/bbmap.sh in=NS1_R3_forward_paired.fq in2=NS1_R3_reverse_paired.fq out=Med15_family_NS1_R3.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_NS1_R3.log 2>&1 &
-./bin/bbmap/bbmap.sh in=NS2_R1_forward_paired.fq in2=NS2_R1_reverse_paired.fq out=Med15_family_NS2_R1.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_NS2_R1.log 2>&1 &
-./bin/bbmap/bbmap.sh in=NS2_R2_forward_paired.fq in2=NS2_R2_reverse_paired.fq out=Med15_family_NS2_R2.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_NS2_R2.log 2>&1 &
-./bin/bbmap/bbmap.sh in=NS2_R3_forward_paired.fq in2=NS2_R3_reverse_paired.fq out=Med15_family_NS2_R3.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_NS2_R3.log 2>&1 &
+./bin/bbmap/bbmap.sh in=Canthatch_RNAseq_forward_paired.fq in2=Canthatch_RNAseq_reverse_paired.fq out=Med15_family_Canthatch.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_Canthatch.log 2>&1 &
+./bin/bbmap/bbmap.sh in=NS1_RNAseq_forward_paired.fq in2=NS1_RNAseq_reverse_paired.fq out=Med15_family_NS1.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_NS1.log 2>&1 &
+./bin/bbmap/bbmap.sh in=NS2_RNAseq_forward_paired.fq in2=NS2_RNAseq_reverse_paired.fq out=Med15_family_NS2.sam perfectmode=t threads=1 ambiguous=toss > Med15_family_NS2.log 2>&1 &
 
-samtools view -f2 -Shub -o Med15_family_Canthatch_R1.bam Med15_family_Canthatch_R1.sam > Med15_family_Canthatch_R1.samtools.log 2>&1 &
-samtools view -f2 -Shub -o Med15_family_Canthatch_R2.bam Med15_family_Canthatch_R2.sam > Med15_family_Canthatch_R2.samtools.log 2>&1 &
-samtools view -f2 -Shub -o Med15_family_Canthatch_R3.bam Med15_family_Canthatch_R3.sam > Med15_family_Canthatch_R3.samtools.log 2>&1 &
-samtools view -f2 -Shub -o Med15_family_NS1_R1.bam Med15_family_NS1_R1.sam > Med15_family_NS1_R1.samtools.log 2>&1 &
-samtools view -f2 -Shub -o Med15_family_NS1_R2.bam Med15_family_NS1_R2.sam > Med15_family_NS1_R2.samtools.log 2>&1 &
-samtools view -f2 -Shub -o Med15_family_NS1_R3.bam Med15_family_NS1_R3.sam > Med15_family_NS1_R3.samtools.log 2>&1 &
-samtools view -f2 -Shub -o Med15_family_NS2_R1.bam Med15_family_NS2_R1.sam > Med15_family_NS2_R1.samtools.log 2>&1 &
-samtools view -f2 -Shub -o Med15_family_NS2_R2.bam Med15_family_NS2_R2.sam > Med15_family_NS2_R2.samtools.log 2>&1 &
-samtools view -f2 -Shub -o Med15_family_NS2_R3.bam Med15_family_NS2_R3.sam > Med15_family_NS2_R3.samtools.log 2>&1 &
+samtools view -f2 -Shub -o Med15_family_Canthatch.bam Med15_family_Canthatch.sam > Med15_family_Canthatch.samtools.log 2>&1 &
+samtools view -f2 -Shub -o Med15_family_NS1.bam Med15_family_NS1.sam > Med15_family_NS1.samtools.log 2>&1 &
+samtools view -f2 -Shub -o Med15_family_NS2.bam Med15_family_NS2.sam > Med15_family_NS2.samtools.log 2>&1 &
 
-samtools sort Med15_family_Canthatch_R1.bam Med15_family_Canthatch_R1.sorted
-samtools sort Med15_family_Canthatch_R2.bam Med15_family_Canthatch_R2.sorted
-samtools sort Med15_family_Canthatch_R3.bam Med15_family_Canthatch_R3.sorted
-samtools sort Med15_family_NS1_R1.bam Med15_family_NS1_R1.sorted
-samtools sort Med15_family_NS1_R2.bam Med15_family_NS1_R2.sorted
-samtools sort Med15_family_NS1_R3.bam Med15_family_NS1_R3.sorted
-samtools sort Med15_family_NS2_R1.bam Med15_family_NS2_R1.sorted
-samtools sort Med15_family_NS2_R2.bam Med15_family_NS2_R2.sorted
-samtools sort Med15_family_NS2_R3.bam Med15_family_NS2_R3.sorted
-
-samtools merge Med15_family_Canthatch.sorted Med15_family_Canthatch_R1.sorted.bam Med15_family_Canthatch_R2.sorted.bam Med15_family_Canthatch_R3.sorted.bam
-samtools merge Med15_family_NS1.sorted Med15_family_NS1_R1.sorted.bam Med15_family_NS1_R2.sorted.bam Med15_family_NS1_R3.sorted.bam
-samtools merge Med15_family_NS2.sorted Med15_family_NS2_R1.sorted.bam Med15_family_NS2_R2.sorted.bam Med15_family_NS2_R3.sorted.bam
+samtools sort Med15_family_Canthatch.bam Med15_family_Canthatch.sorted
+samtools sort Med15_family_NS1.bam Med15_family_NS1.sorted
+samtools sort Med15_family_NS2.bam Med15_family_NS2.sorted
 ```
-
-### Does loss of *SuSr1* lead to increased expression of *Lr34*?
-*Med15* has been proposed to have a regulatory role on ABC transporters in yeast. Therefore, an interesting question was whether loss of *SuSr1* modulate the expression level of *Lr34*?
-
-```bash
-cat chr7A_50000000_50100000.fa chr7D_47400000_47430000.fa > Lr34.fa
-
-./hisat2-2.1.0/hisat2-build Lr34.fa Lr34
-
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01918_L1_1.fq.gz,TA_01918_L2_1.fq.gz -2 TA_01918_L1_2.fq.gz,TA_01918_L2_2.fq.gz -S Lr34_Can_RNAseq.sam
-
-samtools view -f2 -Shub -o Lr34_Can_RNAseq.bam Lr34_Can_RNAseq.sam
-samtools sort Lr34_Can_RNAseq.bam Lr34_Can_RNAseq.sorted
-samtools rmdup Lr34_Can_RNAseq.sorted.bam Lr34_Can_RNAseq.sorted.rmdup.bam
-
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01915_L1_1.fq.gz,TA_01915_L2_1.fq.gz -2 TA_01915_L1_2.fq.gz,TA_01915_L2_2.fq.gz -S Lr34_NS1M_RNAseq.sam
-
-samtools view -f2 -Shub -o Lr34_NS1M_RNAseq.bam Lr34_NS1M_RNAseq.sam
-samtools sort Lr34_NS1M_RNAseq.bam Lr34_NS1M_RNAseq.sorted
-samtools rmdup Lr34_NS1M_RNAseq.sorted.bam Lr34_NS1M_RNAseq.sorted.rmdup.bam
-
-./hisat2-2.1.0/hisat2 --max-intronlen 20000 -p 16 -x Lr34 -1 TA_01916_L1_1.fq.gz,TA_01916_L2_1.fq.gz,TA_01916_L3_1.fq.gz,TA_01916_L4_1.fq.gz -2 TA_01916_L1_2.fq.gz,TA_01916_L2_2.fq.gz,TA_01916_L3_2.fq.gz,TA_01916_L4_2.fq.gz -S Lr34_NS2N_RNAseq.sam
-
-samtools view -f2 -Shub -o Lr34_NS2N_RNAseq.bam Lr34_NS2N_RNAseq.sam
-samtools sort Lr34_NS2N_RNAseq.bam Lr34_NS2N_RNAseq.sorted
-samtools rmdup Lr34_NS2N_RNAseq.sorted.bam Lr34_NS2N_RNAseq.sorted.rmdup.bam
-```
-
-**Table.** Physical regions encompassing *Lr34* and homeologs in wheat.
-
-|Gene           |Chromosome|Start   |End     |
-|:-------------:|:--------:|:------:|:------:|
-|*Lr34* homeolog|    7A    |50000000|50100000|
-|*Lr34*         |    7D    |47400000|47430000|
-
-**Table.** Read coverage of Lr34 and homeolog
-
-|Gene |Canthatch|NS1     |NS2     |
-|:---:|:-------:|:------:|:------:|
-|Lr34 |1599     |864     |792     |
-|Reads|41000991 |29237025|27664945|
-
-The results are unclear, as we need to have replicated data to see if lower expression of *Lr34* is real or an artefact of sampling.
-
 
 ### Natural variation in *Med15* in *Aegilops tauschii*
 We assessed the natural variation of *TaMed15.bD* in *Aegilops tauschii* through an alignment-based strategy of publically available RNAseq data.
@@ -708,5 +647,3 @@ codeml codeml_H3.ctl
 ```
 
 Results from this analysis can be found in the Excel file [mutation_rate_analysis_Poaceae_b90.xlsx](data/codeml/mutation_rate_Poaceae_b90/mutation_rate_analysis_Poaceae_b90.xlsx)
-
-
