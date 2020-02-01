@@ -1,6 +1,13 @@
 # Canthatch
 In 1980, Kerber and Green identified the presence of a suppressor of resistance in wheat to wheat stem rust (*Puccinia graminis* f. sp. *tritici*). Kerber and Green (1980) mapped the suppression to chromosome 7D, and Kerber (1991) established that a single locus conferred suppression on chromosome 7D. We set out to identify the suppressor gene in Canthatch by applying chromosome flow sorting and high throughput sequencing to Canthatch and two EMS-derived mutants.
 
+## Reference
+The following analyses are included within the following manuscript:
+
+> Stem rust resistance in wheat is suppressed by a subunit of the Mediator complex
+> Colin W. Hiebert, Matthew J. Moscou, Tim Hewitt,, Burkhard Steuernagel, Inma Hernández-Pinzón, Phon Green, Vincent Pujol, Peng Zhang, Matthew N. Rouse, Yue Jin, Robert A. McIntosh, Narayana Upadhyaya, Jianping Zhang, Sridhar Bhavani, Jan Vrána, Miroslava Karafiátová, Li Huang, Tom Fetch, Jaroslav Doležel, Brande B. H. Wulff, Evans Lagudah, Wolfgang Spielmeyer
+> *Nature Communications*; Accepted; doi:
+
 **Table of Contents**  
 
    * [Canthatch](#canthatch)
@@ -441,7 +448,7 @@ dev.off()
 
 ## Expression analysis of Canthatch and mutants
 ### Gene expression of the homeologous *Med15b* gene family
-Initial mapping of RNAseq reads was performed using `HISAT2`.
+Initial mapping of RNAseq reads was performed using `hisat2`.
 
 ```bash
 ./hisat2-2.1.0/hisat2-build chr7ABD_Med15.fa chr7ABD_Med15
@@ -555,7 +562,7 @@ tophat2 -N 1 -p 4 --report-secondary-alignments chr7D_Med15 ~/temp/DRR058968_1.f
 mv tophat_out tophat_out_Med15bD_PI499262
 ```
 
-### RNAseq coverage over *TaMed15.bD*
+### RNAseq coverage over *TaMed15b.D*
 ```bash
 bedtools genomecov -d -split -ibam Med15_Can_RNAseq.sorted.rmdup.bam > Med15_Can.7DL.sorted.rmdup.genomecov.txt
 bedtools genomecov -d -split -ibam Med15_NS1M_RNAseq.sorted.rmdup.bam > Med15_NS1M.7DL.sorted.rmdup.genomecov.txt
@@ -649,3 +656,760 @@ codeml codeml_H3.ctl
 ```
 
 Results from this analysis can be found in the Excel file [mutation_rate_analysis_Poaceae_b90.xlsx](data/codeml/mutation_rate_Poaceae_b90/mutation_rate_analysis_Poaceae_b90.xlsx)
+
+## RNAseq analysis of differentially expressed genes in Canthatch, NS1, and NS2
+To understand the number of genes that are differentially expressed between Canthatch, NS1, and NS2, we performed an RNAseq experiment using first leaf uninoculated tissue for Canthatch, NS1, and NS2. The entire experiment was performed and sampled independently three times. Total RNA was extracted using a standard Trizol-based protocol. Samples were sent to Novogene for sequencing, using Illumina 150 bp, pair-end reads to increase the specificity of mapping in wheat.
+
+### Quality control analysis of replicated RNAseq data set
+Our first step was to quality control reads using FastQC. All samples passed initial quality control. In addition, wild-type (Canthatch) and mutants NS1 and NS2 were evaluated to determine if mutations in Med15bD could be observed. All were corrected assigned.  
+
+``bash
+fastqc *.gz
+```
+
+Reads were cleaned using Trimmomatic v0.36. Approximately 95-96% of paired end reads met the thresholds for inclusion in the analysis.
+
+```bash
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_1_1.clean.fq.gz IHP396_1_2.clean.fq.gz Canthatch_R1_forward_paired.fq.gz Canthatch_R1_forward_unpaired.fq.gz Canthatch_R1_reverse_paired.fq.gz Canthatch_R1_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_1.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_4_1.clean.fq.gz IHP396_4_2.clean.fq.gz Canthatch_R2_forward_paired.fq.gz Canthatch_R2_forward_unpaired.fq.gz Canthatch_R2_reverse_paired.fq.gz Canthatch_R2_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_4.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_7_1.clean.fq.gz IHP396_7_2.clean.fq.gz Canthatch_R3_forward_paired.fq.gz Canthatch_R3_forward_unpaired.fq.gz Canthatch_R3_reverse_paired.fq.gz Canthatch_R3_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_7.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_2_1.clean.fq.gz IHP396_2_2.clean.fq.gz NS1_R1_forward_paired.fq.gz NS1_R1_forward_unpaired.fq.gz NS1_R1_reverse_paired.fq.gz NS1_R1_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_2.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_5_1.clean.fq.gz IHP396_5_2.clean.fq.gz NS1_R2_forward_paired.fq.gz NS1_R2_forward_unpaired.fq.gz NS1_R2_reverse_paired.fq.gz NS1_R2_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_5.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_8_1.clean.fq.gz IHP396_8_2.clean.fq.gz NS1_R3_forward_paired.fq.gz NS1_R3_forward_unpaired.fq.gz NS1_R3_reverse_paired.fq.gz NS1_R3_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_8.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_3_1.clean.fq.gz IHP396_3_2.clean.fq.gz NS2_R1_forward_paired.fq.gz NS2_R1_forward_unpaired.fq.gz NS2_R1_reverse_paired.fq.gz NS2_R1_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_3.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_6_1.clean.fq.gz IHP396_6_2.clean.fq.gz NS2_R2_forward_paired.fq.gz NS2_R2_forward_unpaired.fq.gz NS2_R2_reverse_paired.fq.gz NS2_R2_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_6.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 IHP396_9_1.clean.fq.gz IHP396_9_2.clean.fq.gz NS2_R3_forward_paired.fq.gz NS2_R3_forward_unpaired.fq.gz NS2_R3_reverse_paired.fq.gz NS2_R3_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_9.run.log 2>&1 &
+```
+
+### Alignment of RNAseq reads using kallisto
+Our first approach was to use `kallisto` to align reads to wheat. `kallisto` performs a psuedoalignment based on a transcript database. Therefore, we first need to extract the gene models for wheat. In the analysis, we include both high and low confidence gene models from wheat.
+
+```bash
+cat iwgsc_refseqv1.0_HighConf_2017Mar13.gff3 iwgsc_refseqv1.0_LowConf_2017Mar13.gff3 > iwgsc_refseqv1.0_AllConf_2017Mar13.gff3
+gffread iwgsc_refseqv1.0_AllConf_2017Mar13.gff3 -T -o iwgsc_refseqv1.0_AllConf_2017Mar13.gtf
+gtf_to_fasta iwgsc_refseqv1.0_AllConf_2017Mar13.gtf 161010_Chinese_Spring_v1.0_pseudomolecules.fasta iwgsc_refseqv1.0_AllConf_2017Mar13.fa
+```
+
+Next, we align reads to the reference transcriptome of wheat.
+
+```bash
+~/data/bin/kallisto_linux-v0.43.1/kallisto index -i wheatgenomev1 iwgsc_refseqv1.0_AllConf_2017Mar13.fa
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o Canthatch_R1 Canthatch_R1_forward_paired.fq.gz Canthatch_R1_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o Canthatch_R2 Canthatch_R2_forward_paired.fq.gz Canthatch_R2_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o Canthatch_R3 Canthatch_R3_forward_paired.fq.gz Canthatch_R3_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o NS1_R1 NS1_R1_forward_paired.fq.gz NS1_R1_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o NS1_R2 NS1_R2_forward_paired.fq.gz NS1_R2_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o NS1_R3 NS1_R3_forward_paired.fq.gz NS1_R3_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o NS2_R1 NS2_R1_forward_paired.fq.gz NS2_R1_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o NS2_R2 NS2_R2_forward_paired.fq.gz NS2_R2_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 4 -o NS2_R3 NS2_R3_forward_paired.fq.gz NS2_R3_reverse_paired.fq.gz
+
+cp Canthatch_R1/abundance.tsv Canthatch_R1_abundance.tsv
+cp Canthatch_R2/abundance.tsv Canthatch_R2_abundance.tsv
+cp Canthatch_R3/abundance.tsv Canthatch_R3_abundance.tsv
+
+cp NS1_R1/abundance.tsv NS1_R1_abundance.tsv
+cp NS1_R2/abundance.tsv NS1_R2_abundance.tsv
+cp NS1_R3/abundance.tsv NS1_R3_abundance.tsv
+
+cp NS2_R1/abundance.tsv NS2_R1_abundance.tsv
+cp NS2_R2/abundance.tsv NS2_R2_abundance.tsv
+cp NS2_R3/abundance.tsv NS2_R3_abundance.tsv
+```
+
+### Alignment of RNAseq reads to *de novo* transcriptome assembly
+Alignment to the Chinese Spring reference genome assumes that all genes present in Canthatch are present in Chinese Spring. To account for novel or highly divergent genes in Canthatch relative to Chinese Spring, we perform a *de novo* transcriptome assembly of wild-type and mutant RNAseq and use this as template for aligning reads to assess read coverage.
+
+#### *de novo* transcriptome assembly of Canthatch, NS1, and NS2
+Trinity (v.2.4.0) was used for *de novo* transcriptome assembly.
+
+```bash
+./Trinity --seqType fq --max_memory 480G  --left Canthatch_R1_forward_paired.fq,Canthatch_R2_forward_paired.fq,Canthatch_R3_forward_paired.fq,NS1_R1_forward_paired.fq,NS1_R2_forward_paired.fq,NS1_R3_forward_paired.fq,NS2_R1_forward_paired.fq,NS2_R2_forward_paired.fq,NS2_R3_forward_paired.fq --right Canthatch_R1_reverse_paired.fq,Canthatch_R2_reverse_paired.fq,Canthatch_R3_reverse_paired.fq,NS1_R1_reverse_paired.fq,NS1_R2_reverse_paired.fq,NS1_R3_reverse_paired.fq,NS2_R1_reverse_paired.fq,NS2_R2_reverse_paired.fq,NS2_R3_reverse_paired.fq --CPU 64
+```
+
+Next, we aligned reads using `bbsplit` to the Trinity assembly and extracted read counts for each transcript using `featureCounts`.
+
+```bash
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=Canthatch_R1_forward_paired.fq in2=Canthatch_R1_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_Can_1.sam > bbsplit_trinity_Can_1.txt 2>&1 &
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=Canthatch_R2_forward_paired.fq in2=Canthatch_R2_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_Can_2.sam > bbsplit_trinity_Can_2.txt 2>&1 &
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=Canthatch_R3_forward_paired.fq in2=Canthatch_R3_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_Can_3.sam > bbsplit_trinity_Can_3.txt 2>&1 &
+
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=NS1_R1_forward_paired.fq in2=NS1_R1_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_NS1_1.sam > bbsplit_trinity_NS1_1.txt 2>&1 &
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=NS1_R2_forward_paired.fq in2=NS1_R2_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_NS1_2.sam > bbsplit_trinity_NS1_2.txt 2>&1 &
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=NS1_R3_forward_paired.fq in2=NS1_R3_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_NS1_3.sam > bbsplit_trinity_NS1_3.txt 2>&1 &
+
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=NS2_R1_forward_paired.fq in2=NS2_R1_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_NS2_1.sam > bbsplit_trinity_NS2_1.txt 2>&1 &
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=NS2_R2_forward_paired.fq in2=NS2_R2_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_NS2_2.sam > bbsplit_trinity_NS2_2.txt 2>&1 &
+~/bbmap/bbsplit.sh ref=Canthatch_trinity_assembly_v4r.fa in1=NS2_R3_forward_paired.fq in2=NS2_R3_reverse_paired.fq minid=0.95 maxindel=1 outm=Srs_NS2_3.sam > bbsplit_trinity_NS2_3.txt 2>&1 &
+
+python trinity_gtf.py
+
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_Can_1_sorted_readCounts.txt Srs_Can_1.sorted.bam > Srs_Can_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_Can_2_sorted_readCounts.txt Srs_Can_2.sorted.bam > Srs_Can_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_Can_3_sorted_readCounts.txt Srs_Can_3.sorted.bam > Srs_Can_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_NS1_1_sorted_readCounts.txt Srs_NS1_1.sorted.bam > Srs_NS1_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_NS1_2_sorted_readCounts.txt Srs_NS1_2.sorted.bam > Srs_NS1_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_NS1_3_sorted_readCounts.txt Srs_NS1_3.sorted.bam > Srs_NS1_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_NS2_1_sorted_readCounts.txt Srs_NS2_1.sorted.bam > Srs_NS2_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_NS2_2_sorted_readCounts.txt Srs_NS2_2.sorted.bam > Srs_NS2_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a Canthatch_trinity_assembly_v4r.gtf -o Srs_NS2_3_sorted_readCounts.txt Srs_NS2_3.sorted.bam > Srs_NS2_3_sorted_featureCounts_output.txt 2>&1 &
+```
+
+```bash
+~/data/bin/kallisto_linux-v0.43.1/kallisto index -i trinityv4r Canthatch_trinity_assembly_v4r.fa
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_Canthatch_R1 Canthatch_R1_forward_paired.fq.gz Canthatch_R1_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_Canthatch_R2 Canthatch_R2_forward_paired.fq.gz Canthatch_R2_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_Canthatch_R3 Canthatch_R3_forward_paired.fq.gz Canthatch_R3_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_NS1_R1 NS1_R1_forward_paired.fq.gz NS1_R1_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_NS1_R2 NS1_R2_forward_paired.fq.gz NS1_R2_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_NS1_R3 NS1_R3_forward_paired.fq.gz NS1_R3_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_NS2_R1 NS2_R1_forward_paired.fq.gz NS2_R1_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_NS2_R2 NS2_R2_forward_paired.fq.gz NS2_R2_reverse_paired.fq.gz
+~/data/bin/kallisto_linux-v0.43.1/kallisto quant -i trinityv4r -b 100 -t 36 -o trinity_kallisto_NS2_R3 NS2_R3_forward_paired.fq.gz NS2_R3_reverse_paired.fq.gz
+
+cp trinity_kallisto_Canthatch_R1/abundance.tsv trinity_kallisto_Canthatch_R1_abundance.tsv
+cp trinity_kallisto_Canthatch_R2/abundance.tsv trinity_kallisto_Canthatch_R2_abundance.tsv
+cp trinity_kallisto_Canthatch_R3/abundance.tsv trinity_kallisto_Canthatch_R3_abundance.tsv
+
+cp trinity_kallisto_NS1_R1/abundance.tsv trinity_kallisto_NS1_R1_abundance.tsv
+cp trinity_kallisto_NS1_R2/abundance.tsv trinity_kallisto_NS1_R2_abundance.tsv
+cp trinity_kallisto_NS1_R3/abundance.tsv trinity_kallisto_NS1_R3_abundance.tsv
+
+cp trinity_kallisto_NS2_R1/abundance.tsv trinity_kallisto_NS2_R1_abundance.tsv
+cp trinity_kallisto_NS2_R2/abundance.tsv trinity_kallisto_NS2_R2_abundance.tsv
+cp trinity_kallisto_NS2_R3/abundance.tsv trinity_kallisto_NS2_R3_abundance.tsv
+```
+
+### Mapping of reads using unambiguous mapping
+
+Note: Use toss and all commands for ambiguous mapping (complementary analyses)
+
+```bash
+# Relaxed alignment, allowing all reads regardless of multiple mapping
+./bin/bbmap/bbmap.sh ref=iwgsc_refseqv1.0_AllConf_2017Mar13_ID.fa 
+./bin/bbmap/bbmap.sh in1=Canthatch_R1_forward_paired.fq in2=Canthatch_R1_reverse_paired.fq out=SuSr1_Can_1.sam ambiguous=all minid=0.95 > bbmap_all_Canthatch_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=Canthatch_R2_forward_paired.fq in2=Canthatch_R2_reverse_paired.fq out=SuSr1_Can_2.sam ambiguous=all minid=0.95 > bbmap_all_Canthatch_R2.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=Canthatch_R3_forward_paired.fq in2=Canthatch_R3_reverse_paired.fq out=SuSr1_Can_3.sam ambiguous=all minid=0.95 > bbmap_all_Canthatch_R3.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R1_forward_paired.fq in2=NS1_R1_reverse_paired.fq out=SuSr1_NS1_1.sam ambiguous=all minid=0.95 > bbmap_all_NS1_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R2_forward_paired.fq in2=NS1_R2_reverse_paired.fq out=SuSr1_NS1_2.sam ambiguous=all minid=0.95 > bbmap_all_NS1_R2.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R3_forward_paired.fq in2=NS1_R3_reverse_paired.fq out=SuSr1_NS1_3.sam ambiguous=all minid=0.95 > bbmap_all_NS1_R3.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R1_forward_paired.fq in2=NS2_R1_reverse_paired.fq out=SuSr1_NS2_1.sam ambiguous=all minid=0.95 > bbmap_all_NS2_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R2_forward_paired.fq in2=NS2_R2_reverse_paired.fq out=SuSr1_NS2_2.sam ambiguous=all minid=0.95 > bbmap_all_NS2_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R3_forward_paired.fq in2=NS2_R3_reverse_paired.fq out=SuSr1_NS2_3.sam ambiguous=all minid=0.95 > bbmap_all_NS2_R3.run.log 2>&1 &
+
+samtools view -Shub -o SuSr1_Can_1.bam SuSr1_Can_1.sam > bbmap_all_Canthatch_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_Can_2.bam SuSr1_Can_2.sam > bbmap_all_Canthatch_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_Can_3.bam SuSr1_Can_3.sam > bbmap_all_Canthatch_R3.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_NS1_1.bam SuSr1_NS1_1.sam > bbmap_all_NS1_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_NS1_2.bam SuSr1_NS1_2.sam > bbmap_all_NS1_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_NS1_3.bam SuSr1_NS1_3.sam > bbmap_all_NS1_R3.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_NS2_1.bam SuSr1_NS2_1.sam > bbmap_all_NS2_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_NS2_2.bam SuSr1_NS2_2.sam > bbmap_all_NS2_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_NS2_3.bam SuSr1_NS2_3.sam > bbmap_all_NS2_R3.samtools.log 2>&1 &
+
+samtools sort SuSr1_Can_1.bam SuSr1_Can_1.sorted > bbmap_all_Canthatch_R1.sort.log 2>&1 &
+samtools sort SuSr1_Can_2.bam SuSr1_Can_2.sorted > bbmap_all_Canthatch_R2.sort.log 2>&1 &
+samtools sort SuSr1_Can_3.bam SuSr1_Can_3.sorted > bbmap_all_Canthatch_R3.sort.log 2>&1 &
+samtools sort SuSr1_NS1_1.bam SuSr1_NS1_1.sorted > bbmap_all_NS1_R1.sort.log 2>&1 &
+samtools sort SuSr1_NS1_2.bam SuSr1_NS1_2.sorted > bbmap_all_NS1_R2.sort.log 2>&1 &
+samtools sort SuSr1_NS1_3.bam SuSr1_NS1_3.sorted > bbmap_all_NS1_R3.sort.log 2>&1 &
+samtools sort SuSr1_NS2_1.bam SuSr1_NS2_1.sorted > bbmap_all_NS2_R1.sort.log 2>&1 &
+samtools sort SuSr1_NS2_2.bam SuSr1_NS2_2.sorted > bbmap_all_NS2_R2.sort.log 2>&1 &
+samtools sort SuSr1_NS2_3.bam SuSr1_NS2_3.sorted > bbmap_all_NS2_R3.sort.log 2>&1 &
+
+# Strict alignment, removing reads with any capacity for multiple mapping
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_Can_1.sorted_readCounts.txt SuSr1_Can_1.sorted.bam > SuSr1_Can_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_Can_2.sorted_readCounts.txt SuSr1_Can_2.sorted.bam > SuSr1_Can_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_Can_3.sorted_readCounts.txt SuSr1_Can_3.sorted.bam > SuSr1_Can_3.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_NS1_1.sorted_readCounts.txt SuSr1_NS1_1.sorted.bam > SuSr1_NS1_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_NS1_2.sorted_readCounts.txt SuSr1_NS1_2.sorted.bam > SuSr1_NS1_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_NS1_3.sorted_readCounts.txt SuSr1_NS1_3.sorted.bam > SuSr1_NS1_3.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_NS2_1.sorted_readCounts.txt SuSr1_NS2_1.sorted.bam > SuSr1_NS2_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 1 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_NS2_2.sorted_readCounts.txt SuSr1_NS2_2.sorted.bam > SuSr1_NS2_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 1 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_NS2_3.sorted_readCounts.txt SuSr1_NS2_3.sorted.bam > SuSr1_NS2_3.sorted_featureCounts_output.txt 2>&1 &
+
+./bin/bbmap/bbmap.sh in1=Canthatch_R1_forward_paired.fq in2=Canthatch_R1_reverse_paired.fq out=SuSr1_toss_Can_1.sam ambiguous=toss minid=0.95 > bbmap_toss_Canthatch_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=Canthatch_R2_forward_paired.fq in2=Canthatch_R2_reverse_paired.fq out=SuSr1_toss_Can_2.sam ambiguous=toss minid=0.95 > bbmap_toss_Canthatch_R2.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=Canthatch_R3_forward_paired.fq in2=Canthatch_R3_reverse_paired.fq out=SuSr1_toss_Can_3.sam ambiguous=toss minid=0.95 > bbmap_toss_Canthatch_R3.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R1_forward_paired.fq in2=NS1_R1_reverse_paired.fq out=SuSr1_toss_NS1_1.sam ambiguous=toss minid=0.95 > bbmap_toss_NS1_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R2_forward_paired.fq in2=NS1_R2_reverse_paired.fq out=SuSr1_toss_NS1_2.sam ambiguous=toss minid=0.95 > bbmap_toss_NS1_R2.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R3_forward_paired.fq in2=NS1_R3_reverse_paired.fq out=SuSr1_toss_NS1_3.sam ambiguous=toss minid=0.95 > bbmap_toss_NS1_R3.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R1_forward_paired.fq in2=NS2_R1_reverse_paired.fq out=SuSr1_toss_NS2_1.sam ambiguous=toss minid=0.95 > bbmap_toss_NS2_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R2_forward_paired.fq in2=NS2_R2_reverse_paired.fq out=SuSr1_toss_NS2_2.sam ambiguous=toss minid=0.95 > bbmap_toss_NS2_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R3_forward_paired.fq in2=NS2_R3_reverse_paired.fq out=SuSr1_toss_NS2_3.sam ambiguous=toss minid=0.95 > bbmap_toss_NS2_R3.run.log 2>&1 &
+
+samtools view -Shub -o SuSr1_toss_Can_1.bam SuSr1_toss_Can_1.sam > bbmap_all_Canthatch_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_Can_2.bam SuSr1_toss_Can_2.sam > bbmap_all_Canthatch_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_Can_3.bam SuSr1_toss_Can_3.sam > bbmap_all_Canthatch_R3.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS1_1.bam SuSr1_toss_NS1_1.sam > bbmap_all_NS1_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS1_2.bam SuSr1_toss_NS1_2.sam > bbmap_all_NS1_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS1_3.bam SuSr1_toss_NS1_3.sam > bbmap_all_NS1_R3.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS2_1.bam SuSr1_toss_NS2_1.sam > bbmap_all_NS2_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS2_2.bam SuSr1_toss_NS2_2.sam > bbmap_all_NS2_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS2_3.bam SuSr1_toss_NS2_3.sam > bbmap_all_NS2_R3.samtools.log 2>&1 &
+
+samtools sort SuSr1_toss_Can_1.bam SuSr1_toss_Can_1.sorted > bbmap_all_Canthatch_R1.sort.log 2>&1 &
+samtools sort SuSr1_toss_Can_2.bam SuSr1_toss_Can_2.sorted > bbmap_all_Canthatch_R2.sort.log 2>&1 &
+samtools sort SuSr1_toss_Can_3.bam SuSr1_toss_Can_3.sorted > bbmap_all_Canthatch_R3.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS1_1.bam SuSr1_toss_NS1_1.sorted > bbmap_all_NS1_R1.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS1_2.bam SuSr1_toss_NS1_2.sorted > bbmap_all_NS1_R2.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS1_3.bam SuSr1_toss_NS1_3.sorted > bbmap_all_NS1_R3.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS2_1.bam SuSr1_toss_NS2_1.sorted > bbmap_all_NS2_R1.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS2_2.bam SuSr1_toss_NS2_2.sorted > bbmap_all_NS2_R2.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS2_3.bam SuSr1_toss_NS2_3.sorted > bbmap_all_NS2_R3.sort.log 2>&1 &
+
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_Can_1.sorted_readCounts.txt SuSr1_toss_Can_1.sorted.bam > SuSr1_toss_Can_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_Can_2.sorted_readCounts.txt SuSr1_toss_Can_2.sorted.bam > SuSr1_toss_Can_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_Can_3.sorted_readCounts.txt SuSr1_toss_Can_3.sorted.bam > SuSr1_toss_Can_3.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS1_1.sorted_readCounts.txt SuSr1_toss_NS1_1.sorted.bam > SuSr1_toss_NS1_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS1_2.sorted_readCounts.txt SuSr1_toss_NS1_2.sorted.bam > SuSr1_toss_NS1_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS1_3.sorted_readCounts.txt SuSr1_toss_NS1_3.sorted.bam > SuSr1_toss_NS1_3.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS2_1.sorted_readCounts.txt SuSr1_toss_NS2_1.sorted.bam > SuSr1_toss_NS2_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS2_2.sorted_readCounts.txt SuSr1_toss_NS2_2.sorted.bam > SuSr1_toss_NS2_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS2_3.sorted_readCounts.txt SuSr1_toss_NS2_3.sorted.bam > SuSr1_toss_NS2_3.sorted_featureCounts_output.txt 2>&1 &
+```
+
+### Competitive alignment of RNAseq reads to the sub-genomes of wheat
+`bbsplit` allows for the comparative mapping of reads that have better mapping to one data set over another. To use this approach, we first needed to separate the wheat genome annotations into the A, B, and D sub-genomes.
+
+```bash
+python split_genomes.py 
+grep 'TraesCS[1-9]A' iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf > iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf
+grep 'TraesCS[1-9]B' iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf > iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf
+grep 'TraesCS[1-9]D' iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf > iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf
+```
+
+Next, we use `bbsplit` to align to the three reference genomes (A, B, and D). `samtools` is used to convert sam to bam files and sorting of bam files. Lastly, `featureCounts` is used to extract the read counts for each transcript.
+
+```bash
+~/bbmap/bbsplit.sh ref_a=iwgsc_refseqv1.0_AllConf_2017Mar13_A.fa ref_b=iwgsc_refseqv1.0_AllConf_2017Mar13_B.fa ref_d=iwgsc_refseqv1.0_AllConf_2017Mar13_D.fa in1=Canthatch_R3_forward_paired.fq in2=Canthatch_R3_reverse_paired.fq ambiguous2=toss out_a=Srs_A_Can_3.sam out_b=Srs_B_Can_3.sam out_d=Srs_D_Can_3.sam > bbsplit_Canthatch_R3.run.log 2>&1 &
+
+~/bbmap/bbsplit.sh ref_a=iwgsc_refseqv1.0_AllConf_2017Mar13_A.fa ref_b=iwgsc_refseqv1.0_AllConf_2017Mar13_B.fa ref_d=iwgsc_refseqv1.0_AllConf_2017Mar13_D.fa in1=NS1_R1_forward_paired.fq in2=NS1_R1_reverse_paired.fq ambiguous2=toss out_a=Srs_A_NS1_1.sam out_b=Srs_B_NS1_1.sam out_d=Srs_D_NS1_1.sam > bbsplit_NS1_R1.run.log 2>&1 &
+
+~/bbmap/bbsplit.sh ref_a=iwgsc_refseqv1.0_AllConf_2017Mar13_A.fa ref_b=iwgsc_refseqv1.0_AllConf_2017Mar13_B.fa ref_d=iwgsc_refseqv1.0_AllConf_2017Mar13_D.fa in1=NS1_R2_forward_paired.fq in2=NS1_R2_reverse_paired.fq ambiguous2=toss out_a=Srs_A_NS1_2.sam out_b=Srs_B_NS1_2.sam out_d=Srs_D_NS1_2.sam > bbsplit_NS1_R2.run.log 2>&1 &
+
+~/bbmap/bbsplit.sh ref_a=iwgsc_refseqv1.0_AllConf_2017Mar13_A.fa ref_b=iwgsc_refseqv1.0_AllConf_2017Mar13_B.fa ref_d=iwgsc_refseqv1.0_AllConf_2017Mar13_D.fa in1=NS1_R3_forward_paired.fq in2=NS1_R3_reverse_paired.fq ambiguous2=toss out_a=Srs_A_NS1_3.sam out_b=Srs_B_NS1_3.sam out_d=Srs_D_NS1_3.sam > bbsplit_NS1_R3.run.log 2>&1 &
+
+~/bbmap/bbsplit.sh ref_a=iwgsc_refseqv1.0_AllConf_2017Mar13_A.fa ref_b=iwgsc_refseqv1.0_AllConf_2017Mar13_B.fa ref_d=iwgsc_refseqv1.0_AllConf_2017Mar13_D.fa in1=NS2_R1_forward_paired.fq in2=NS2_R1_reverse_paired.fq ambiguous2=toss out_a=Srs_A_NS2_1.sam out_b=Srs_B_NS2_1.sam out_d=Srs_D_NS2_1.sam > bbsplit_NS2_R1.run.log 2>&1 &
+
+~/bbmap/bbsplit.sh ref_a=iwgsc_refseqv1.0_AllConf_2017Mar13_A.fa ref_b=iwgsc_refseqv1.0_AllConf_2017Mar13_B.fa ref_d=iwgsc_refseqv1.0_AllConf_2017Mar13_D.fa in1=NS2_R3_forward_paired.fq in2=NS2_R3_reverse_paired.fq ambiguous2=toss out_a=Srs_A_NS2_3.sam out_b=Srs_B_NS2_3.sam out_d=Srs_D_NS2_3.sam > bbsplit_NS2_R3.run.log 2>&1 &
+
+samtools view -Shub Srs_Can_1.sam > Srs_Can_1.bam
+samtools sort Srs_Can_1.bam Srs_Can_1.sorted
+
+samtools view -Shub Srs_Can_2.sam > Srs_Can_2.bam
+samtools sort Srs_Can_2.bam Srs_Can_2.sorted
+
+samtools view -Shub Srs_Can_3.sam > Srs_Can_3.bam
+samtools sort Srs_Can_3.bam Srs_Can_3.sorted
+
+samtools view -Shub Srs_NS1_1.sam > Srs_NS1_1.bam
+samtools sort Srs_NS1_1.bam Srs_NS1_1.sorted
+
+samtools view -Shub Srs_NS1_2.sam > Srs_NS1_2.bam
+samtools sort Srs_NS1_2.bam Srs_NS1_2.sorted
+
+samtools view -Shub Srs_NS1_3.sam > Srs_NS1_3.bam
+samtools sort Srs_NS1_3.bam Srs_NS1_3.sorted
+
+samtools view -Shub Srs_NS2_1.sam > Srs_NS2_1.bam
+samtools sort Srs_NS2_1.bam Srs_NS2_1.sorted
+
+samtools view -Shub Srs_NS2_2.sam > Srs_NS2_2.bam
+samtools sort Srs_NS2_2.bam Srs_NS2_2.sorted
+
+samtools view -Shub Srs_NS2_3.sam > Srs_NS2_3.bam
+samtools sort Srs_NS2_3.bam Srs_NS2_3.sorted
+
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_Can_1_sorted_readCounts.txt Srs_A_Can_1_sorted.bam > Srs_A_Can_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_Can_1_sorted_readCounts.txt Srs_B_Can_1_sorted.bam > Srs_B_Can_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_Can_1_sorted_readCounts.txt Srs_D_Can_1_sorted.bam > Srs_D_Can_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_Can_2_sorted_readCounts.txt Srs_A_Can_2_sorted.bam > Srs_A_Can_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_Can_2_sorted_readCounts.txt Srs_B_Can_2_sorted.bam > Srs_B_Can_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_Can_2_sorted_readCounts.txt Srs_D_Can_2_sorted.bam > Srs_D_Can_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_Can_3_sorted_readCounts.txt Srs_A_Can_3_sorted.bam > Srs_A_Can_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_Can_3_sorted_readCounts.txt Srs_B_Can_3_sorted.bam > Srs_B_Can_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_Can_3_sorted_readCounts.txt Srs_D_Can_3_sorted.bam > Srs_D_Can_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_NS1_1_sorted_readCounts.txt Srs_A_NS1_1_sorted.bam > Srs_A_NS1_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_NS1_1_sorted_readCounts.txt Srs_B_NS1_1_sorted.bam > Srs_B_NS1_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_NS1_1_sorted_readCounts.txt Srs_D_NS1_1_sorted.bam > Srs_D_NS1_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_NS1_2_sorted_readCounts.txt Srs_A_NS1_2_sorted.bam > Srs_A_NS1_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_NS1_2_sorted_readCounts.txt Srs_B_NS1_2_sorted.bam > Srs_B_NS1_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_NS1_2_sorted_readCounts.txt Srs_D_NS1_2_sorted.bam > Srs_D_NS1_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_NS1_3_sorted_readCounts.txt Srs_A_NS1_3_sorted.bam > Srs_A_NS1_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_NS1_3_sorted_readCounts.txt Srs_B_NS1_3_sorted.bam > Srs_B_NS1_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_NS1_3_sorted_readCounts.txt Srs_D_NS1_3_sorted.bam > Srs_D_NS1_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_NS2_1_sorted_readCounts.txt Srs_A_NS2_1_sorted.bam > Srs_A_NS2_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_NS2_1_sorted_readCounts.txt Srs_B_NS2_1_sorted.bam > Srs_B_NS2_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_NS2_1_sorted_readCounts.txt Srs_D_NS2_1_sorted.bam > Srs_D_NS2_1_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_NS2_2_sorted_readCounts.txt Srs_A_NS2_2_sorted.bam > Srs_A_NS2_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_NS2_2_sorted_readCounts.txt Srs_B_NS2_2_sorted.bam > Srs_B_NS2_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_NS2_2_sorted_readCounts.txt Srs_D_NS2_2_sorted.bam > Srs_D_NS2_2_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_A.gtf -o Srs_A_NS2_3_sorted_readCounts.txt Srs_A_NS2_3_sorted.bam > Srs_A_NS2_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_B.gtf -o Srs_B_NS2_3_sorted_readCounts.txt Srs_B_NS2_3_sorted.bam > Srs_B_NS2_3_sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_D.gtf -o Srs_D_NS2_3_sorted_readCounts.txt Srs_D_NS2_3_sorted.bam > Srs_D_NS2_3_sorted_featureCounts_output.txt 2>&1 &
+```
+
+### Manual evaluation of aligned reads to candidate induced/suppressed genes
+`bbsplit` was used to alignment reads to genes of interest (differentially expressed). This data set was used for manual curation and assessment of the results from earlier analyses.
+
+```bash
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=Canthatch_R1_forward_paired.fq in2=Canthatch_R1_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_Can_1.sam
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=Canthatch_R2_forward_paired.fq in2=Canthatch_R2_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_Can_2.sam
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=Canthatch_R3_forward_paired.fq in2=Canthatch_R3_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_Can_3.sam
+
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=NS1_R1_forward_paired.fq in2=NS1_R1_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_NS1_1.sam
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=NS1_R2_forward_paired.fq in2=NS1_R2_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_NS1_2.sam
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=NS1_R3_forward_paired.fq in2=NS1_R3_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_NS1_3.sam
+
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=NS2_R1_forward_paired.fq in2=NS2_R1_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_NS2_1.sam
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=NS2_R2_forward_paired.fq in2=NS2_R2_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_NS2_2.sam
+~/bbmap/bbsplit.sh ref=genes_of_interest.fa in1=NS2_R3_forward_paired.fq in2=NS2_R3_reverse_paired.fq minid=0.985 maxindel=1 outm=Srs_NS2_3.sam
+
+samtools view -Shub Srs_Can_1.sam > Srs_Can_1.bam
+samtools sort Srs_Can_1.bam Srs_Can_1.sorted
+
+samtools view -Shub Srs_Can_2.sam > Srs_Can_2.bam
+samtools sort Srs_Can_2.bam Srs_Can_2.sorted
+
+samtools view -Shub Srs_Can_3.sam > Srs_Can_3.bam
+samtools sort Srs_Can_3.bam Srs_Can_3.sorted
+
+samtools view -Shub Srs_NS1_1.sam > Srs_NS1_1.bam
+samtools sort Srs_NS1_1.bam Srs_NS1_1.sorted
+
+samtools view -Shub Srs_NS1_2.sam > Srs_NS1_2.bam
+samtools sort Srs_NS1_2.bam Srs_NS1_2.sorted
+
+samtools view -Shub Srs_NS1_3.sam > Srs_NS1_3.bam
+samtools sort Srs_NS1_3.bam Srs_NS1_3.sorted
+
+samtools view -Shub Srs_NS2_1.sam > Srs_NS2_1.bam
+samtools sort Srs_NS2_1.bam Srs_NS2_1.sorted
+
+samtools view -Shub Srs_NS2_2.sam > Srs_NS2_2.bam
+samtools sort Srs_NS2_2.bam Srs_NS2_2.sorted
+
+samtools view -Shub Srs_NS2_3.sam > Srs_NS2_3.bam
+samtools sort Srs_NS2_3.bam Srs_NS2_3.sorted
+```
+
+### Mapping of reads using unambiguous mapping on the reference genome
+
+Note: Use toss and all commands for ambiguous mapping (complementary analyses)
+
+```bash
+~/bin/hisat2-2.1.0/hisat2 -p 128 -x wheatgenomev1 -1 Canthatch_R1_forward_paired.fq.gz -2 Canthatch_R1_reverse_paired.fq.gz -S wheatgenomev1_Canthatch_R1.sam > hisat2_wheatgenomev1_Canthatch_R1.log 2>&1 &
+~/bin/hisat2-2.1.0/hisat2 -p 128 -x wheatgenomev1 -1 Canthatch_R2_forward_paired.fq.gz -2 Canthatch_R2_reverse_paired.fq.gz -S wheatgenomev1_Canthatch_R2.sam > hisat2_wheatgenomev1_Canthatch_R2.log 2>&1 &
+~/bin/hisat2-2.1.0/hisat2 -p 128 -x wheatgenomev1 -1 Canthatch_R3_forward_paired.fq.gz -2 Canthatch_R3_reverse_paired.fq.gz -S wheatgenomev1_Canthatch_R3.sam > hisat2_wheatgenomev1_Canthatch_R3.log 2>&1 &
+~/bin/hisat2-2.1.0/hisat2 -p 72 -x wheatgenomev1 -1 NS1_R1_forward_paired.fq.gz -2 NS1_R1_reverse_paired.fq.gz -S wheatgenomev1_NS1_R1.sam > hisat2_wheatgenomev1_NS1_R1.log 2>&1 &
+~/bin/hisat2-2.1.0/hisat2 -p 72 -x wheatgenomev1 -1 NS1_R2_forward_paired.fq.gz -2 NS1_R2_reverse_paired.fq.gz -S wheatgenomev1_NS1_R2.sam > hisat2_wheatgenomev1_NS1_R2.log 2>&1 &
+~/bin/hisat2-2.1.0/hisat2 -p 72 -x wheatgenomev1 -1 NS1_R3_forward_paired.fq.gz -2 NS1_R3_reverse_paired.fq.gz -S wheatgenomev1_NS1_R3.sam > hisat2_wheatgenomev1_NS1_R3.log 2>&1 &
+~/bin/hisat2-2.1.0/hisat2 -p 72 -x wheatgenomev1 -1 NS2_R1_forward_paired.fq.gz -2 NS2_R1_reverse_paired.fq.gz -S wheatgenomev1_NS2_R1.sam > hisat2_wheatgenomev1_NS2_R1.log 2>&1 &
+~/bin/hisat2-2.1.0/hisat2 -p 72 -x wheatgenomev1 -1 NS2_R2_forward_paired.fq.gz -2 NS2_R2_reverse_paired.fq.gz -S wheatgenomev1_NS2_R2.sam > hisat2_wheatgenomev1_NS2_R2.log 2>&1 &
+~/bin/hisat2-2.1.0/hisat2 -p 72 -x wheatgenomev1 -1 NS2_R3_forward_paired.fq.gz -2 NS2_R3_reverse_paired.fq.gz -S wheatgenomev1_NS2_R3.sam > hisat2_wheatgenomev1_NS2_R3.log 2>&1 &
+
+samtools view -Shub -o wheatgenomev1_Canthatch_R1.bam wheatgenomev1_Canthatch_R1.sam > hisat2_Canthatch_R1.samtools.log 2>&1 &
+samtools view -Shub -o wheatgenomev1_Canthatch_R2.bam wheatgenomev1_Canthatch_R2.sam > hisat2_Canthatch_R2.samtools.log 2>&1 &
+samtools view -Shub -o wheatgenomev1_Canthatch_R3.bam wheatgenomev1_Canthatch_R3.sam > hisat2_Canthatch_R3.samtools.log 2>&1 &
+samtools view -Shub -o wheatgenomev1_NS1_R1.bam wheatgenomev1_NS1_R1.sam > hisat2_NS1_R1.samtools.log 2>&1 &
+samtools view -Shub -o wheatgenomev1_NS1_R2.bam wheatgenomev1_NS1_R2.sam > hisat2_NS1_R2.samtools.log 2>&1 &
+samtools view -Shub -o wheatgenomev1_NS1_R3.bam wheatgenomev1_NS1_R3.sam > hisat2_NS1_R3.samtools.log 2>&1 &
+samtools view -Shub -o wheatgenomev1_NS2_R1.bam wheatgenomev1_NS2_R1.sam > hisat2_NS2_R1.samtools.log 2>&1 &
+samtools view -Shub -o wheatgenomev1_NS2_R2.bam wheatgenomev1_NS2_R2.sam > hisat2_NS2_R2.samtools.log 2>&1 &
+samtools view -Shub -o wheatgenomev1_NS2_R3.bam wheatgenomev1_NS2_R3.sam > hisat2_NS2_R3.samtools.log 2>&1 &
+
+samtools sort wheatgenomev1_Canthatch_R1.bam wheatgenomev1_Canthatch_R1.sorted > hisat2_Canthatch_R1.sort.log 2>&1 &
+samtools sort wheatgenomev1_Canthatch_R2.bam wheatgenomev1_Canthatch_R2.sorted > hisat2_Canthatch_R2.sort.log 2>&1 &
+samtools sort wheatgenomev1_Canthatch_R3.bam wheatgenomev1_Canthatch_R3.sorted > hisat2_Canthatch_R3.sort.log 2>&1 &
+samtools sort wheatgenomev1_NS1_R1.bam wheatgenomev1_NS1_R1.sorted > hisat2_NS1_R1.sort.log 2>&1 &
+samtools sort wheatgenomev1_NS1_R2.bam wheatgenomev1_NS1_R2.sorted > hisat2_NS1_R2.sort.log 2>&1 &
+samtools sort wheatgenomev1_NS1_R3.bam wheatgenomev1_NS1_R3.sorted > hisat2_NS1_R3.sort.log 2>&1 &
+samtools sort wheatgenomev1_NS2_R1.bam wheatgenomev1_NS2_R1.sorted > hisat2_NS2_R1.sort.log 2>&1 &
+samtools sort wheatgenomev1_NS2_R2.bam wheatgenomev1_NS2_R2.sorted > hisat2_NS2_R2.sort.log 2>&1 &
+samtools sort wheatgenomev1_NS2_R3.bam wheatgenomev1_NS2_R3.sorted > hisat2_NS2_R3.sort.log 2>&1 &
+
+# Strict alignment, removing reads with any capacity for multiple mapping
+featureCounts -p -T 4 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_Canthatch_R1.sorted_readCounts.txt wheatgenomev1_Canthatch_R1.sorted.bam > hisat2_wheatgenomev1_Canthatch_R1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -p -T 4 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_Canthatch_R2.sorted_readCounts.txt wheatgenomev1_Canthatch_R2.sorted.bam > hisat2_wheatgenomev1_Canthatch_R2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -p -T 1 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_Canthatch_R3.sorted_readCounts.txt wheatgenomev1_Canthatch_R3.sorted.bam > hisat2_wheatgenomev1_Canthatch_R3.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -p -T 1 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_NS1_R1.sorted_readCounts.txt wheatgenomev1_NS1_R1.sorted.bam > hisat2_wheatgenomev1_NS1_R1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -p -T 1 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_NS1_R2.sorted_readCounts.txt wheatgenomev1_NS1_R2.sorted.bam > hisat2_wheatgenomev1_NS1_R2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -p -T 1 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_NS1_R3.sorted_readCounts.txt wheatgenomev1_NS1_R3.sorted.bam > hisat2_wheatgenomev1_NS1_R3.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -p -T 1 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_NS2_R1.sorted_readCounts.txt wheatgenomev1_NS2_R1.sorted.bam > hisat2_wheatgenomev1_NS2_R1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -p -T 1 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_NS2_R2.sorted_readCounts.txt wheatgenomev1_NS2_R2.sorted.bam > hisat2_wheatgenomev1_NS2_R2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -p -T 1 -M -O -t exon -g transcript_id -a iwgsc_refseqv1.0_HighConf_2017Mar13.gtf -o wheatgenomev1_NS2_R3.sorted_readCounts.txt wheatgenomev1_NS2_R3.sorted.bam > hisat2_wheatgenomev1_NS2_R3.sorted_featureCounts_output.txt 2>&1 &
+
+./bin/bbmap/bbmap.sh in1=Canthatch_R1_forward_paired.fq in2=Canthatch_R1_reverse_paired.fq out=SuSr1_toss_Can_1.sam ambiguous=toss minid=0.95 > bbmap_toss_Canthatch_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=Canthatch_R2_forward_paired.fq in2=Canthatch_R2_reverse_paired.fq out=SuSr1_toss_Can_2.sam ambiguous=toss minid=0.95 > bbmap_toss_Canthatch_R2.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=Canthatch_R3_forward_paired.fq in2=Canthatch_R3_reverse_paired.fq out=SuSr1_toss_Can_3.sam ambiguous=toss minid=0.95 > bbmap_toss_Canthatch_R3.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R1_forward_paired.fq in2=NS1_R1_reverse_paired.fq out=SuSr1_toss_NS1_1.sam ambiguous=toss minid=0.95 > bbmap_toss_NS1_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R2_forward_paired.fq in2=NS1_R2_reverse_paired.fq out=SuSr1_toss_NS1_2.sam ambiguous=toss minid=0.95 > bbmap_toss_NS1_R2.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS1_R3_forward_paired.fq in2=NS1_R3_reverse_paired.fq out=SuSr1_toss_NS1_3.sam ambiguous=toss minid=0.95 > bbmap_toss_NS1_R3.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R1_forward_paired.fq in2=NS2_R1_reverse_paired.fq out=SuSr1_toss_NS2_1.sam ambiguous=toss minid=0.95 > bbmap_toss_NS2_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R2_forward_paired.fq in2=NS2_R2_reverse_paired.fq out=SuSr1_toss_NS2_2.sam ambiguous=toss minid=0.95 > bbmap_toss_NS2_R1.run.log 2>&1 &
+./bin/bbmap/bbmap.sh in1=NS2_R3_forward_paired.fq in2=NS2_R3_reverse_paired.fq out=SuSr1_toss_NS2_3.sam ambiguous=toss minid=0.95 > bbmap_toss_NS2_R3.run.log 2>&1 &
+
+samtools view -Shub -o SuSr1_toss_Can_1.bam SuSr1_toss_Can_1.sam > bbmap_all_Canthatch_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_Can_2.bam SuSr1_toss_Can_2.sam > bbmap_all_Canthatch_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_Can_3.bam SuSr1_toss_Can_3.sam > bbmap_all_Canthatch_R3.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS1_1.bam SuSr1_toss_NS1_1.sam > bbmap_all_NS1_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS1_2.bam SuSr1_toss_NS1_2.sam > bbmap_all_NS1_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS1_3.bam SuSr1_toss_NS1_3.sam > bbmap_all_NS1_R3.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS2_1.bam SuSr1_toss_NS2_1.sam > bbmap_all_NS2_R1.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS2_2.bam SuSr1_toss_NS2_2.sam > bbmap_all_NS2_R2.samtools.log 2>&1 &
+samtools view -Shub -o SuSr1_toss_NS2_3.bam SuSr1_toss_NS2_3.sam > bbmap_all_NS2_R3.samtools.log 2>&1 &
+
+samtools sort SuSr1_toss_Can_1.bam SuSr1_toss_Can_1.sorted > bbmap_all_Canthatch_R1.sort.log 2>&1 &
+samtools sort SuSr1_toss_Can_2.bam SuSr1_toss_Can_2.sorted > bbmap_all_Canthatch_R2.sort.log 2>&1 &
+samtools sort SuSr1_toss_Can_3.bam SuSr1_toss_Can_3.sorted > bbmap_all_Canthatch_R3.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS1_1.bam SuSr1_toss_NS1_1.sorted > bbmap_all_NS1_R1.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS1_2.bam SuSr1_toss_NS1_2.sorted > bbmap_all_NS1_R2.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS1_3.bam SuSr1_toss_NS1_3.sorted > bbmap_all_NS1_R3.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS2_1.bam SuSr1_toss_NS2_1.sorted > bbmap_all_NS2_R1.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS2_2.bam SuSr1_toss_NS2_2.sorted > bbmap_all_NS2_R2.sort.log 2>&1 &
+samtools sort SuSr1_toss_NS2_3.bam SuSr1_toss_NS2_3.sorted > bbmap_all_NS2_R3.sort.log 2>&1 &
+
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_Can_1.sorted_readCounts.txt SuSr1_toss_Can_1.sorted.bam > SuSr1_toss_Can_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_Can_2.sorted_readCounts.txt SuSr1_toss_Can_2.sorted.bam > SuSr1_toss_Can_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_Can_3.sorted_readCounts.txt SuSr1_toss_Can_3.sorted.bam > SuSr1_toss_Can_3.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS1_1.sorted_readCounts.txt SuSr1_toss_NS1_1.sorted.bam > SuSr1_toss_NS1_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS1_2.sorted_readCounts.txt SuSr1_toss_NS1_2.sorted.bam > SuSr1_toss_NS1_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS1_3.sorted_readCounts.txt SuSr1_toss_NS1_3.sorted.bam > SuSr1_toss_NS1_3.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS2_1.sorted_readCounts.txt SuSr1_toss_NS2_1.sorted.bam > SuSr1_toss_NS2_1.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS2_2.sorted_readCounts.txt SuSr1_toss_NS2_2.sorted.bam > SuSr1_toss_NS2_2.sorted_featureCounts_output.txt 2>&1 &
+featureCounts -T 4 -M -O -t exon -g gene_id -a iwgsc_refseqv1.0_AllConf_2017Mar13_ABD.gtf -o SuSr1_toss_NS2_3.sorted_readCounts.txt SuSr1_toss_NS2_3.sorted.bam > SuSr1_toss_NS2_3.sorted_featureCounts_output.txt 2>&1 &
+```
+
+### Differential expressed gene analysis of Canthatch, NS1, and NS2
+Differential gene expression analysis was performed using the `R` package `DESeq2`. Input files included a tab-delimited abundance values and an experimental design (RNAseq_experimental_design.txt). First, we merge the expression levels from replicated wild-type and mutant data sets using the script `merge_RNAseq_datasets.py`. 
+
+```bash
+python merge_RNAseq_datasets.py *_abundance.tsv
+```
+
+Next, we use `DESeq2` to identify differentially expressed genes using pairwise comparisons of wild-type (Canthatch) and mutants NS1 and NS2.
+
+```R
+# import modules
+library(DESeq2)
+
+# set working directory
+setwd("~/Desktop/bioinformatics/Canthatch/RNAseq_v2/Canthatch_kallisto/")
+#setwd("~/Desktop/bioinformatics/Canthatch/RNAseq_v2/Canthatch_bbmap/all")
+#setwd("~/Desktop/bioinformatics/Canthatch/RNAseq_v2/Canthatch_bbmap/toss")
+#setwd("~/Desktop/bioinformatics/Canthatch/RNAseq_v2/Canthatch_bbsplit/")
+#setwd("~/Desktop/bioinformatics/Canthatch/RNAseq_v2/Canthatch_hisat2/")
+#setwd("~/Desktop/bioinformatics/Canthatch/RNAseq_v2/Canthatch_trinity/")
+#setwd("~/Desktop/bioinformatics/Canthatch/RNAseq_v2/Canthatch_trinity_kallisto/")
+
+# import counts and experimental design
+SuSr1counts = read.table("SuSr1_kallisto_RNAseq.txt",sep="\t", header=T, row.names=1)
+#SuSr1counts = read.table("SuSr1_bbmap_all_RNAseq.txt",sep="\t", header=T, row.names=1)
+#SuSr1counts = read.table("SuSr1_bbmap_toss_RNAseq.txt",sep="\t", header=T, row.names=1)
+#SuSr1counts = read.table("SuSr1_bbsplit_RNAseq.txt",sep="\t", header=T, row.names=1)
+#SuSr1counts = read.table("SuSr1_hisat2_RNAseq.txt",sep="\t", header=T, row.names=1)
+#SuSr1counts = read.table("SuSr1_trinity_RNAseq.txt",sep="\t", header=T, row.names=1)
+#SuSr1counts = read.table("SuSr1_trinity_kallisto_RNAseq.txt",sep="\t", header=T, row.names=1)
+design = read.table(file="RNAseq_experimental_design.txt", sep="\t", header=T, row.names=1)
+
+# convert matrix files into DESeq data set
+dds <- DESeqDataSetFromMatrix(countData = SuSr1counts, colData = design, design = ~ genotype)
+
+# perform DEseq analysis
+dds.data = DESeq(dds)
+res<-results(dds.data, contrast=c("genotype", "wt", "mt1"))
+res<-res[order(res$padj),]
+head(res)
+summary(res, alpha=0.05)
+write.csv(as.data.frame(res),file="Canthatch_NS1_results.csv")
+
+res<-results(dds.data, contrast=c("genotype", "wt", "mt2"))
+res<-res[order(res$padj),]
+head(res)
+summary(res, alpha=0.05)
+write.csv(as.data.frame(res),file="Canthatch_NS2_results.csv")
+
+plotCounts(dds, gene="TraesCS1D01G400100.1", intgroup="genotype")
+
+# export normalized counts for subsequent analysis
+nt <- normTransform(ddsColl.data)
+log2.norm.counts <- assay(nt)
+write.table(log2.norm.counts, file="normalizedCounts.tsv", sep="\t")
+```
+
+Next, we export gene expression plots of genes experiencing induction or suppression that is shared or unique to specific mutants.
+
+```R
+png(file="TraesCS1A01G353800.1.png", width=400, height=400)
+plotCounts(dds, gene="TraesCS1A01G353800.1", intgroup="genotype")
+dev.off()
+
+png(file="TraesCS1D01G400100.1.png", width=400, height=400)
+plotCounts(dds, gene="TraesCS1D01G400100.1", intgroup="genotype")
+dev.off()
+
+png(file="TraesCS1D01G376000.1.png", width=400, height=400)
+plotCounts(dds, gene="TraesCS1D01G376000.1", intgroup="genotype")
+dev.off()
+
+png(file="TraesCS2B01G050600.1.png", width=400, height=400)
+plotCounts(dds, gene="TraesCS2B01G050600.1", intgroup="genotype")
+dev.off()
+
+png(file="TraesCS2B01G012600.2.png", width=400, height=400)
+plotCounts(dds, gene="TraesCS2B01G012600.2", intgroup="genotype")
+dev.off()
+
+png(file="TraesCS6D01G296300LC.1.png", width=400, height=400)
+plotCounts(dds, gene="TraesCS6D01G296300LC.1", intgroup="genotype")
+dev.off()
+
+png(file="TraesCS3B01G449100LC.1.png", width=400, height=400)
+plotCounts(dds, gene="TraesCS3B01G449100LC.1", intgroup="genotype")
+dev.off()
+```
+
+Plot of differentially expressed genes relative to physical location on chromosomes.
+
+```R
+library(ggplot2)
+data = read.table(file="status_chr_DE.txt", header=T)
+data = data.frame(data)
+ggplot(data[data$status=="suppressed",], aes(chromosome, DE)) + geom_bar(stat="identity")
+ggplot(data[data$status=="induced",], aes(chromosome, DE)) + geom_bar(stat="identity")
+```
+
+## Time-course RNAseq analysis of differentially expressed genes in Canthatch, NS1, and NS2 in *Pgt*-inoculated and mock-inoculated treatments
+
+### Trimming of reads using Trimmomatic
+```bash
+java -jar trimmomatic-0.36.jar PE -phred33 CY321_1.fq.gz CY321_2.fq.gz Canthatch_Mock_0_R1_RNAseq_forward_paired.fq.gz Canthatch_Mock_0_R1_RNAseq_forward_unpaired.fq.gz Canthatch_Mock_0_R1_RNAseq_reverse_paired.fq.gz Canthatch_Mock_0_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_1.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY304_1.fq.gz CY304_2.fq.gz Canthatch_Mock_0_R2_RNAseq_forward_paired.fq.gz Canthatch_Mock_0_R2_RNAseq_forward_unpaired.fq.gz Canthatch_Mock_0_R2_RNAseq_reverse_paired.fq.gz Canthatch_Mock_0_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_2.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY322_1.fq.gz CY322_2.fq.gz Canthatch_Mock_0_R3_RNAseq_forward_paired.fq.gz Canthatch_Mock_0_R3_RNAseq_forward_unpaired.fq.gz Canthatch_Mock_0_R3_RNAseq_reverse_paired.fq.gz Canthatch_Mock_0_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_3.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY306_1.fq.gz CY306_2.fq.gz NS1_Mock_0_R1_RNAseq_forward_paired.fq.gz NS1_Mock_0_R1_RNAseq_forward_unpaired.fq.gz NS1_Mock_0_R1_RNAseq_reverse_paired.fq.gz NS1_Mock_0_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_4.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY307_1.fq.gz CY307_2.fq.gz NS1_Mock_0_R2_RNAseq_forward_paired.fq.gz NS1_Mock_0_R2_RNAseq_forward_unpaired.fq.gz NS1_Mock_0_R2_RNAseq_reverse_paired.fq.gz NS1_Mock_0_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_5.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY308_1.fq.gz CY308_2.fq.gz NS1_Mock_0_R3_RNAseq_forward_paired.fq.gz NS1_Mock_0_R3_RNAseq_forward_unpaired.fq.gz NS1_Mock_0_R3_RNAseq_reverse_paired.fq.gz NS1_Mock_0_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_6.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY323_1.fq.gz CY323_2.fq.gz NS2_Mock_0_R1_RNAseq_forward_paired.fq.gz NS2_Mock_0_R1_RNAseq_forward_unpaired.fq.gz NS2_Mock_0_R1_RNAseq_reverse_paired.fq.gz NS2_Mock_0_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_7.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY324_1.fq.gz CY324_2.fq.gz NS2_Mock_0_R2_RNAseq_forward_paired.fq.gz NS2_Mock_0_R2_RNAseq_forward_unpaired.fq.gz NS2_Mock_0_R2_RNAseq_reverse_paired.fq.gz NS2_Mock_0_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_8.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY311_1.fq.gz CY311_2.fq.gz NS2_Mock_0_R3_RNAseq_forward_paired.fq.gz NS2_Mock_0_R3_RNAseq_forward_unpaired.fq.gz NS2_Mock_0_R3_RNAseq_reverse_paired.fq.gz NS2_Mock_0_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_9.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY312_1.fq.gz CY312_2.fq.gz Canthatch_Pgt_0_R1_RNAseq_forward_paired.fq.gz Canthatch_Pgt_0_R1_RNAseq_forward_unpaired.fq.gz Canthatch_Pgt_0_R1_RNAseq_reverse_paired.fq.gz Canthatch_Pgt_0_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_10.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY313_1.fq.gz CY313_2.fq.gz Canthatch_Pgt_0_R2_RNAseq_forward_paired.fq.gz Canthatch_Pgt_0_R2_RNAseq_forward_unpaired.fq.gz Canthatch_Pgt_0_R2_RNAseq_reverse_paired.fq.gz Canthatch_Pgt_0_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_11.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY314_1.fq.gz CY314_2.fq.gz Canthatch_Pgt_0_R3_RNAseq_forward_paired.fq.gz Canthatch_Pgt_0_R3_RNAseq_forward_unpaired.fq.gz Canthatch_Pgt_0_R3_RNAseq_reverse_paired.fq.gz Canthatch_Pgt_0_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_12.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY315_1.fq.gz CY315_2.fq.gz NS1_Pgt_0_R1_RNAseq_forward_paired.fq.gz NS1_Pgt_0_R1_RNAseq_forward_unpaired.fq.gz NS1_Pgt_0_R1_RNAseq_reverse_paired.fq.gz NS1_Pgt_0_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_13.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY316_1.fq.gz CY316_2.fq.gz NS1_Pgt_0_R2_RNAseq_forward_paired.fq.gz NS1_Pgt_0_R2_RNAseq_forward_unpaired.fq.gz NS1_Pgt_0_R2_RNAseq_reverse_paired.fq.gz NS1_Pgt_0_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_14.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY317_1.fq.gz CY317_2.fq.gz NS1_Pgt_0_R3_RNAseq_forward_paired.fq.gz NS1_Pgt_0_R3_RNAseq_forward_unpaired.fq.gz NS1_Pgt_0_R3_RNAseq_reverse_paired.fq.gz NS1_Pgt_0_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_15.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY318_1.fq.gz CY318_2.fq.gz NS2_Pgt_0_R1_RNAseq_forward_paired.fq.gz NS2_Pgt_0_R1_RNAseq_forward_unpaired.fq.gz NS2_Pgt_0_R1_RNAseq_reverse_paired.fq.gz NS2_Pgt_0_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_16.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY319_1.fq.gz CY319_2.fq.gz NS2_Pgt_0_R2_RNAseq_forward_paired.fq.gz NS2_Pgt_0_R2_RNAseq_forward_unpaired.fq.gz NS2_Pgt_0_R2_RNAseq_reverse_paired.fq.gz NS2_Pgt_0_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_17.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY320_1.fq.gz CY320_2.fq.gz NS2_Pgt_0_R3_RNAseq_forward_paired.fq.gz NS2_Pgt_0_R3_RNAseq_forward_unpaired.fq.gz NS2_Pgt_0_R3_RNAseq_reverse_paired.fq.gz NS2_Pgt_0_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_18.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY333_1.fq.gz CY333_2.fq.gz Canthatch_Mock_24_R1_RNAseq_forward_paired.fq.gz Canthatch_Mock_24_R1_RNAseq_forward_unpaired.fq.gz Canthatch_Mock_24_R1_RNAseq_reverse_paired.fq.gz Canthatch_Mock_24_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_19.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY334_1.fq.gz CY334_2.fq.gz Canthatch_Mock_24_R2_RNAseq_forward_paired.fq.gz Canthatch_Mock_24_R2_RNAseq_forward_unpaired.fq.gz Canthatch_Mock_24_R2_RNAseq_reverse_paired.fq.gz Canthatch_Mock_24_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_20.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY335_1.fq.gz CY335_2.fq.gz Canthatch_Mock_24_R3_RNAseq_forward_paired.fq.gz Canthatch_Mock_24_R3_RNAseq_forward_unpaired.fq.gz Canthatch_Mock_24_R3_RNAseq_reverse_paired.fq.gz Canthatch_Mock_24_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_21.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY336_1.fq.gz CY336_2.fq.gz NS1_Mock_24_R1_RNAseq_forward_paired.fq.gz NS1_Mock_24_R1_RNAseq_forward_unpaired.fq.gz NS1_Mock_24_R1_RNAseq_reverse_paired.fq.gz NS1_Mock_24_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_22.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY337_1.fq.gz CY337_2.fq.gz NS1_Mock_24_R2_RNAseq_forward_paired.fq.gz NS1_Mock_24_R2_RNAseq_forward_unpaired.fq.gz NS1_Mock_24_R2_RNAseq_reverse_paired.fq.gz NS1_Mock_24_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_23.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY338_1.fq.gz CY338_2.fq.gz NS1_Mock_24_R3_RNAseq_forward_paired.fq.gz NS1_Mock_24_R3_RNAseq_forward_unpaired.fq.gz NS1_Mock_24_R3_RNAseq_reverse_paired.fq.gz NS1_Mock_24_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_24.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY339_1.fq.gz CY339_2.fq.gz NS2_Mock_24_R1_RNAseq_forward_paired.fq.gz NS2_Mock_24_R1_RNAseq_forward_unpaired.fq.gz NS2_Mock_24_R1_RNAseq_reverse_paired.fq.gz NS2_Mock_24_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_25.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY340_1.fq.gz CY340_2.fq.gz NS2_Mock_24_R2_RNAseq_forward_paired.fq.gz NS2_Mock_24_R2_RNAseq_forward_unpaired.fq.gz NS2_Mock_24_R2_RNAseq_reverse_paired.fq.gz NS2_Mock_24_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_26.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY341_1.fq.gz CY341_2.fq.gz NS2_Mock_24_R3_RNAseq_forward_paired.fq.gz NS2_Mock_24_R3_RNAseq_forward_unpaired.fq.gz NS2_Mock_24_R3_RNAseq_reverse_paired.fq.gz NS2_Mock_24_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_27.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY342_1.fq.gz CY342_2.fq.gz Canthatch_Pgt_24_R1_RNAseq_forward_paired.fq.gz Canthatch_Pgt_24_R1_RNAseq_forward_unpaired.fq.gz Canthatch_Pgt_24_R1_RNAseq_reverse_paired.fq.gz Canthatch_Pgt_24_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_28.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY343_1.fq.gz CY343_2.fq.gz Canthatch_Pgt_24_R2_RNAseq_forward_paired.fq.gz Canthatch_Pgt_24_R2_RNAseq_forward_unpaired.fq.gz Canthatch_Pgt_24_R2_RNAseq_reverse_paired.fq.gz Canthatch_Pgt_24_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_29.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY344_1.fq.gz CY344_2.fq.gz Canthatch_Pgt_24_R3_RNAseq_forward_paired.fq.gz Canthatch_Pgt_24_R3_RNAseq_forward_unpaired.fq.gz Canthatch_Pgt_24_R3_RNAseq_reverse_paired.fq.gz Canthatch_Pgt_24_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_30.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY345_1.fq.gz CY345_2.fq.gz NS1_Pgt_24_R1_RNAseq_forward_paired.fq.gz NS1_Pgt_24_R1_RNAseq_forward_unpaired.fq.gz NS1_Pgt_24_R1_RNAseq_reverse_paired.fq.gz NS1_Pgt_24_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_31.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY346_1.fq.gz CY346_2.fq.gz NS1_Pgt_24_R2_RNAseq_forward_paired.fq.gz NS1_Pgt_24_R2_RNAseq_forward_unpaired.fq.gz NS1_Pgt_24_R2_RNAseq_reverse_paired.fq.gz NS1_Pgt_24_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_32.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY347_1.fq.gz CY347_2.fq.gz NS1_Pgt_24_R3_RNAseq_forward_paired.fq.gz NS1_Pgt_24_R3_RNAseq_forward_unpaired.fq.gz NS1_Pgt_24_R3_RNAseq_reverse_paired.fq.gz NS1_Pgt_24_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_33.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY348_1.fq.gz CY348_2.fq.gz NS2_Pgt_24_R1_RNAseq_forward_paired.fq.gz NS2_Pgt_24_R1_RNAseq_forward_unpaired.fq.gz NS2_Pgt_24_R1_RNAseq_reverse_paired.fq.gz NS2_Pgt_24_R1_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_34.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY349_1.fq.gz CY349_2.fq.gz NS2_Pgt_24_R2_RNAseq_forward_paired.fq.gz NS2_Pgt_24_R2_RNAseq_forward_unpaired.fq.gz NS2_Pgt_24_R2_RNAseq_reverse_paired.fq.gz NS2_Pgt_24_R2_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_35.run.log 2>&1 &
+java -jar trimmomatic-0.36.jar PE -phred33 CY350_1.fq.gz CY350_2.fq.gz NS2_Pgt_24_R3_RNAseq_forward_paired.fq.gz NS2_Pgt_24_R3_RNAseq_forward_unpaired.fq.gz NS2_Pgt_24_R3_RNAseq_reverse_paired.fq.gz NS2_Pgt_24_R3_RNAseq_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:36 > trimomatic_36.run.log 2>&1 &
+```
+
+### Alignment of RNAseq reads using kallisto
+Our first approach was to use `kallisto` to align reads to wheat. `kallisto` performs a psuedoalignment based on a transcript database. Therefore, we first need to extract the gene models for wheat. In the analysis, we include both high and low confidence gene models from wheat.
+
+```bash
+cat iwgsc_refseqv1.0_HighConf_2017Mar13.gff3 iwgsc_refseqv1.0_LowConf_2017Mar13.gff3 > iwgsc_refseqv1.0_AllConf_2017Mar13.gff3
+gffread iwgsc_refseqv1.0_AllConf_2017Mar13.gff3 -T -o iwgsc_refseqv1.0_AllConf_2017Mar13.gtf
+gtf_to_fasta iwgsc_refseqv1.0_AllConf_2017Mar13.gtf 161010_Chinese_Spring_v1.0_pseudomolecules.fasta iwgsc_refseqv1.0_AllConf_2017Mar13.fa
+```
+
+Next, we align reads to the reference transcriptome of wheat.
+
+```bash
+./kallisto_linux-v0.43.1/kallisto index -i wheatgenomev1 iwgsc_refseqv1.0_AllConf_2017Mar13.fa
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Mock_0_R1 Canthatch_Mock_0_R1_RNAseq_forward_paired.fq.gz Canthatch_Mock_0_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Mock_0_R2 Canthatch_Mock_0_R2_RNAseq_forward_paired.fq.gz Canthatch_Mock_0_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Mock_0_R3 Canthatch_Mock_0_R3_RNAseq_forward_paired.fq.gz Canthatch_Mock_0_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Mock_0_R1 NS1_Mock_0_R1_RNAseq_forward_paired.fq.gz NS1_Mock_0_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Mock_0_R2 NS1_Mock_0_R2_RNAseq_forward_paired.fq.gz NS1_Mock_0_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Mock_0_R3 NS1_Mock_0_R3_RNAseq_forward_paired.fq.gz NS1_Mock_0_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Mock_0_R1 NS2_Mock_0_R1_RNAseq_forward_paired.fq.gz NS2_Mock_0_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Mock_0_R2 NS2_Mock_0_R2_RNAseq_forward_paired.fq.gz NS2_Mock_0_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Mock_0_R3 NS2_Mock_0_R3_RNAseq_forward_paired.fq.gz NS2_Mock_0_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Pgt_0_R1 Canthatch_Pgt_0_R1_RNAseq_forward_paired.fq.gz Canthatch_Pgt_0_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Pgt_0_R2 Canthatch_Pgt_0_R2_RNAseq_forward_paired.fq.gz Canthatch_Pgt_0_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Pgt_0_R3 Canthatch_Pgt_0_R3_RNAseq_forward_paired.fq.gz Canthatch_Pgt_0_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Pgt_0_R1 NS1_Pgt_0_R1_RNAseq_forward_paired.fq.gz NS1_Pgt_0_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Pgt_0_R2 NS1_Pgt_0_R2_RNAseq_forward_paired.fq.gz NS1_Pgt_0_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Pgt_0_R3 NS1_Pgt_0_R3_RNAseq_forward_paired.fq.gz NS1_Pgt_0_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Pgt_0_R1 NS2_Pgt_0_R1_RNAseq_forward_paired.fq.gz NS2_Pgt_0_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Pgt_0_R2 NS2_Pgt_0_R2_RNAseq_forward_paired.fq.gz NS2_Pgt_0_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Pgt_0_R3 NS2_Pgt_0_R3_RNAseq_forward_paired.fq.gz NS2_Pgt_0_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Mock_24_R1 Canthatch_Mock_24_R1_RNAseq_forward_paired.fq.gz Canthatch_Mock_24_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Mock_24_R2 Canthatch_Mock_24_R2_RNAseq_forward_paired.fq.gz Canthatch_Mock_24_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Mock_24_R3 Canthatch_Mock_24_R3_RNAseq_forward_paired.fq.gz Canthatch_Mock_24_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Mock_24_R1 NS1_Mock_24_R1_RNAseq_forward_paired.fq.gz NS1_Mock_24_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Mock_24_R2 NS1_Mock_24_R2_RNAseq_forward_paired.fq.gz NS1_Mock_24_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Mock_24_R3 NS1_Mock_24_R3_RNAseq_forward_paired.fq.gz NS1_Mock_24_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Mock_24_R1 NS2_Mock_24_R1_RNAseq_forward_paired.fq.gz NS2_Mock_24_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Mock_24_R2 NS2_Mock_24_R2_RNAseq_forward_paired.fq.gz NS2_Mock_24_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Mock_24_R3 NS2_Mock_24_R3_RNAseq_forward_paired.fq.gz NS2_Mock_24_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Pgt_24_R1 Canthatch_Pgt_24_R1_RNAseq_forward_paired.fq.gz Canthatch_Pgt_24_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Pgt_24_R2 Canthatch_Pgt_24_R2_RNAseq_forward_paired.fq.gz Canthatch_Pgt_24_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o Canthatch_Pgt_24_R3 Canthatch_Pgt_24_R3_RNAseq_forward_paired.fq.gz Canthatch_Pgt_24_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Pgt_24_R1 NS1_Pgt_24_R1_RNAseq_forward_paired.fq.gz NS1_Pgt_24_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Pgt_24_R2 NS1_Pgt_24_R2_RNAseq_forward_paired.fq.gz NS1_Pgt_24_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS1_Pgt_24_R3 NS1_Pgt_24_R3_RNAseq_forward_paired.fq.gz NS1_Pgt_24_R3_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Pgt_24_R1 NS2_Pgt_24_R1_RNAseq_forward_paired.fq.gz NS2_Pgt_24_R1_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Pgt_24_R2 NS2_Pgt_24_R2_RNAseq_forward_paired.fq.gz NS2_Pgt_24_R2_RNAseq_reverse_paired.fq.gz 
+./kallisto_linux-v0.43.1/kallisto quant -i wheatgenomev1 -b 100 -t 60 -o NS2_Pgt_24_R3 NS2_Pgt_24_R3_RNAseq_forward_paired.fq.gz NS2_Pgt_24_R3_RNAseq_reverse_paired.fq.gz 
+
+cp Canthatch_Mock_0_R1/abundance.tsv Canthatch_Mock_0_R1_abundance.tsv
+cp Canthatch_Mock_0_R2/abundance.tsv Canthatch_Mock_0_R2_abundance.tsv
+cp Canthatch_Mock_0_R3/abundance.tsv Canthatch_Mock_0_R3_abundance.tsv
+cp NS1_Mock_0_R1/abundance.tsv NS1_Mock_0_R1_abundance.tsv
+cp NS1_Mock_0_R2/abundance.tsv NS1_Mock_0_R2_abundance.tsv
+cp NS1_Mock_0_R3/abundance.tsv NS1_Mock_0_R3_abundance.tsv
+cp NS2_Mock_0_R1/abundance.tsv NS2_Mock_0_R1_abundance.tsv
+cp NS2_Mock_0_R2/abundance.tsv NS2_Mock_0_R2_abundance.tsv
+cp NS2_Mock_0_R3/abundance.tsv NS2_Mock_0_R3_abundance.tsv
+cp Canthatch_Pgt_0_R1/abundance.tsv Canthatch_Pgt_0_R1_abundance.tsv
+cp Canthatch_Pgt_0_R2/abundance.tsv Canthatch_Pgt_0_R2_abundance.tsv
+cp Canthatch_Pgt_0_R3/abundance.tsv Canthatch_Pgt_0_R3_abundance.tsv
+cp NS1_Pgt_0_R1/abundance.tsv NS1_Pgt_0_R1_abundance.tsv
+cp NS1_Pgt_0_R2/abundance.tsv NS1_Pgt_0_R2_abundance.tsv
+cp NS1_Pgt_0_R3/abundance.tsv NS1_Pgt_0_R3_abundance.tsv
+cp NS2_Pgt_0_R1/abundance.tsv NS2_Pgt_0_R1_abundance.tsv
+cp NS2_Pgt_0_R2/abundance.tsv NS2_Pgt_0_R2_abundance.tsv
+cp NS2_Pgt_0_R3/abundance.tsv NS2_Pgt_0_R3_abundance.tsv
+cp Canthatch_Mock_24_R1/abundance.tsv Canthatch_Mock_24_R1_abundance.tsv
+cp Canthatch_Mock_24_R2/abundance.tsv Canthatch_Mock_24_R2_abundance.tsv
+cp Canthatch_Mock_24_R3/abundance.tsv Canthatch_Mock_24_R3_abundance.tsv
+cp NS1_Mock_24_R1/abundance.tsv NS1_Mock_24_R1_abundance.tsv
+cp NS1_Mock_24_R2/abundance.tsv NS1_Mock_24_R2_abundance.tsv
+cp NS1_Mock_24_R3/abundance.tsv NS1_Mock_24_R3_abundance.tsv
+cp NS2_Mock_24_R1/abundance.tsv NS2_Mock_24_R1_abundance.tsv
+cp NS2_Mock_24_R2/abundance.tsv NS2_Mock_24_R2_abundance.tsv
+cp NS2_Mock_24_R3/abundance.tsv NS2_Mock_24_R3_abundance.tsv
+cp Canthatch_Pgt_24_R1/abundance.tsv Canthatch_Pgt_24_R1_abundance.tsv
+cp Canthatch_Pgt_24_R2/abundance.tsv Canthatch_Pgt_24_R2_abundance.tsv
+cp Canthatch_Pgt_24_R3/abundance.tsv Canthatch_Pgt_24_R3_abundance.tsv
+cp NS1_Pgt_24_R1/abundance.tsv NS1_Pgt_24_R1_abundance.tsv
+cp NS1_Pgt_24_R2/abundance.tsv NS1_Pgt_24_R2_abundance.tsv
+cp NS1_Pgt_24_R3/abundance.tsv NS1_Pgt_24_R3_abundance.tsv
+cp NS2_Pgt_24_R1/abundance.tsv NS2_Pgt_24_R1_abundance.tsv
+cp NS2_Pgt_24_R2/abundance.tsv NS2_Pgt_24_R2_abundance.tsv
+cp NS2_Pgt_24_R3/abundance.tsv NS2_Pgt_24_R3_abundance.tsv
+```
+
+### DESeq2 analysis of differentially expressed genes
+```R
+# import modules
+library(DESeq2)
+
+# set working directory
+setwd("~/Research/bioinformatics/Canthatch/RNAseq_v3/")
+
+# import counts and experimental design
+SuSr1counts = read.table("SuSr1_kallisto_RNAseq.txt",sep="\t", header=T, row.names=1)
+design = read.table(file="RNAseq_experimental_design_merged.txt", sep="\t", header=T, row.names=1)
+
+# convert matrix files into DESeq data set
+dds <- DESeqDataSetFromMatrix(countData = SuSr1counts, colData = design, design = ~ GTt)
+
+# perform DEseq analysis
+dds.data = DESeq(dds)
+
+
+res<-results(dds.data, contrast=c("GTt", "CanthatchMock0", "CanthatchPgt0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchMock0_CanthatchPgt0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchMock24", "CanthatchPgt24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchMock24_CanthatchPgt24_results.csv")
+res<-results(dds.data, contrast=c("GTt", "NS1Mock0", "NS1Pgt0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="NS1Mock0_NS1Pgt0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "NS1Mock24", "NS1Pgt24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="NS1Mock24_NS1Pgt24_results.csv")
+res<-results(dds.data, contrast=c("GTt", "NS2Mock0", "NS2Pgt0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="NS2Mock0_NS2Pgt0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "NS2Mock24", "NS2Pgt24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="NS2Mock24_NS2Pgt24_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchMock0", "NS1Mock0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchMock0_NS1Mock0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchMock24", "NS1Mock24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchMock24_NS1Mock24_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchMock0", "NS2Mock0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchMock0_NS2Mock0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchMock24", "NS2Mock24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchMock24_NS2Mock24_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchPgt0", "NS1Pgt0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchPgt0_NS1Pgt0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchPgt24", "NS1Pgt24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchPgt24_NS1Pgt24_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchPgt0", "NS2Pgt0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchPgt0_NS2Pgt0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "CanthatchPgt24", "NS2Pgt24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="CanthatchPgt24_NS2Pgt24_results.csv")
+
+
+res<-results(dds.data, contrast=c("GTt", "NS1Mock0", "NS2Mock0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="NS1Mock0_NS2Mock0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "NS1Mock24", "NS2Mock24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="NS1Mock24_NS2Mock24_results.csv")
+res<-results(dds.data, contrast=c("GTt", "NS1Pgt0", "NS2Mock0"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="NS1Pgt0_NS2Mock0_results.csv")
+res<-results(dds.data, contrast=c("GTt", "NS1Pgt24", "NS2Pgt24"))
+res<-res[order(res$padj),]
+write.csv(as.data.frame(res),file="NS1Pgt24_NS2Pgt24_results.csv")
+
+
+
+
+
+res<-results(dds.data, contrast=c("genotype", "wt", "mt1"))
+res<-res[order(res$padj),]
+head(res)
+summary(res, alpha=0.05)
+write.csv(as.data.frame(res),file="Canthatch_NS1_results.csv")
+
+res<-results(dds.data, contrast=c("genotype", "wt", "mt2"))
+res<-res[order(res$padj),]
+head(res)
+summary(res, alpha=0.05)
+write.csv(as.data.frame(res),file="Canthatch_NS2_results.csv")
+
+plotCounts(dds, gene="TraesCS1D01G400100.1", intgroup="genotype")
+
+# export normalized counts for subsequent analysis
+nt <- normTransform(ddsColl.data)
+log2.norm.counts <- assay(nt)
+write.table(log2.norm.counts, file="normalizedCounts.tsv", sep="\t")
+
+png(file="TraesCS1A01G353800.1.png", width=400, height=400)
+plotCounts(dds, gene="TraesCS1A01G353800.1", intgroup="genotype")
+dev.off()
+```
