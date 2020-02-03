@@ -6,7 +6,7 @@ The following analyses are included within the following manuscript:
 
 > Stem rust resistance in wheat is suppressed by a subunit of the Mediator complex
 > Colin W. Hiebert, Matthew J. Moscou, Tim Hewitt,, Burkhard Steuernagel, Inma Hernández-Pinzón, Phon Green, Vincent Pujol, Peng Zhang, Matthew N. Rouse, Yue Jin, Robert A. McIntosh, Narayana Upadhyaya, Jianping Zhang, Sridhar Bhavani, Jan Vrána, Miroslava Karafiátová, Li Huang, Tom Fetch, Jaroslav Doležel, Brande B. H. Wulff, Evans Lagudah, Wolfgang Spielmeyer
-> *Nature Communications*; Accepted; doi:
+> *Nature Communications*; Accepted
 
 **Table of Contents**  
 
@@ -661,9 +661,9 @@ Results from this analysis can be found in the Excel file [mutation_rate_analysi
 To understand the number of genes that are differentially expressed between Canthatch, NS1, and NS2, we performed an RNAseq experiment using first leaf uninoculated tissue for Canthatch, NS1, and NS2. The entire experiment was performed and sampled independently three times. Total RNA was extracted using a standard Trizol-based protocol. Samples were sent to Novogene for sequencing, using Illumina 150 bp, pair-end reads to increase the specificity of mapping in wheat.
 
 ### Quality control analysis of replicated RNAseq data set
-Our first step was to quality control reads using FastQC. All samples passed initial quality control. In addition, wild-type (Canthatch) and mutants NS1 and NS2 were evaluated to determine if mutations in Med15bD could be observed. All were corrected assigned.  
+Our first step was to quality control reads using FastQC. All samples passed initial quality control. In addition, wild-type (Canthatch) and mutants NS1 and NS2 were evaluated to determine if mutations in Med15b.D could be observed. All were corrected assigned.  
 
-``bash
+```bash
 fastqc *.gz
 ```
 
@@ -1130,6 +1130,7 @@ head(res)
 summary(res, alpha=0.05)
 write.csv(as.data.frame(res),file="Canthatch_NS2_results.csv")
 
+# plot example gene
 plotCounts(dds, gene="TraesCS1D01G400100.1", intgroup="genotype")
 
 # export normalized counts for subsequent analysis
@@ -1181,6 +1182,7 @@ ggplot(data[data$status=="induced",], aes(chromosome, DE)) + geom_bar(stat="iden
 ```
 
 ## Time-course RNAseq analysis of differentially expressed genes in Canthatch, NS1, and NS2 in *Pgt*-inoculated and mock-inoculated treatments
+In a follow up experiment, we performed a replicated time course experiment at 0 and 24 hours after inoculation with *P. graminis* f. sp. *tritici* and mock-inoculation with Canthatch, NS1, and NS2.
 
 ### Trimming of reads using Trimmomatic
 ```bash
@@ -1310,6 +1312,12 @@ cp NS2_Pgt_24_R2/abundance.tsv NS2_Pgt_24_R2_abundance.tsv
 cp NS2_Pgt_24_R3/abundance.tsv NS2_Pgt_24_R3_abundance.tsv
 ```
 
+Individual abundances were merged using the `Python` script `merge_RNAseq_datasets.py`
+
+```bash
+python merge_RNAseq_datasets.py *_abundance.tsv
+```
+
 ### DESeq2 analysis of differentially expressed genes
 ```R
 # import modules
@@ -1328,7 +1336,7 @@ dds <- DESeqDataSetFromMatrix(countData = SuSr1counts, colData = design, design 
 # perform DEseq analysis
 dds.data = DESeq(dds)
 
-
+# all pairwise comparisons between genotype, treatment, and time points
 res<-results(dds.data, contrast=c("GTt", "CanthatchMock0", "CanthatchPgt0"))
 res<-res[order(res$padj),]
 write.csv(as.data.frame(res),file="CanthatchMock0_CanthatchPgt0_results.csv")
@@ -1371,8 +1379,6 @@ write.csv(as.data.frame(res),file="CanthatchPgt0_NS2Pgt0_results.csv")
 res<-results(dds.data, contrast=c("GTt", "CanthatchPgt24", "NS2Pgt24"))
 res<-res[order(res$padj),]
 write.csv(as.data.frame(res),file="CanthatchPgt24_NS2Pgt24_results.csv")
-
-
 res<-results(dds.data, contrast=c("GTt", "NS1Mock0", "NS2Mock0"))
 res<-res[order(res$padj),]
 write.csv(as.data.frame(res),file="NS1Mock0_NS2Mock0_results.csv")
@@ -1385,31 +1391,4 @@ write.csv(as.data.frame(res),file="NS1Pgt0_NS2Mock0_results.csv")
 res<-results(dds.data, contrast=c("GTt", "NS1Pgt24", "NS2Pgt24"))
 res<-res[order(res$padj),]
 write.csv(as.data.frame(res),file="NS1Pgt24_NS2Pgt24_results.csv")
-
-
-
-
-
-res<-results(dds.data, contrast=c("genotype", "wt", "mt1"))
-res<-res[order(res$padj),]
-head(res)
-summary(res, alpha=0.05)
-write.csv(as.data.frame(res),file="Canthatch_NS1_results.csv")
-
-res<-results(dds.data, contrast=c("genotype", "wt", "mt2"))
-res<-res[order(res$padj),]
-head(res)
-summary(res, alpha=0.05)
-write.csv(as.data.frame(res),file="Canthatch_NS2_results.csv")
-
-plotCounts(dds, gene="TraesCS1D01G400100.1", intgroup="genotype")
-
-# export normalized counts for subsequent analysis
-nt <- normTransform(ddsColl.data)
-log2.norm.counts <- assay(nt)
-write.table(log2.norm.counts, file="normalizedCounts.tsv", sep="\t")
-
-png(file="TraesCS1A01G353800.1.png", width=400, height=400)
-plotCounts(dds, gene="TraesCS1A01G353800.1", intgroup="genotype")
-dev.off()
 ```
