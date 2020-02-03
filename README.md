@@ -11,6 +11,7 @@ The following analyses are included within the following manuscript:
 **Table of Contents**  
 
    * [Canthatch](#canthatch)
+      * [Reference](#reference)
       * [Defining the genetic interval encompassing <em>SuSr1</em>](#defining-the-genetic-interval-encompassing-susr1)
          * [<em>De novo</em> assembly of Canthatch, NS1, and NS2 flow sorted chromosome arm 7DL reads](#de-novo-assembly-of-canthatch-ns1-and-ns2-flow-sorted-chromosome-arm-7dl-reads)
          * [Identification of EMS generated SNPs in NS1 and NS2 relative to Canthatch](#identification-of-ems-generated-snps-in-ns1-and-ns2-relative-to-canthatch)
@@ -27,13 +28,27 @@ The following analyses are included within the following manuscript:
          * [Gene expression of the homeologous <em>Med15b</em> gene family](#gene-expression-of-the-homeologous-med15b-gene-family)
             * [RNAseq mapping to confirm expression of all six <em>Med15</em> genes](#rnaseq-mapping-to-confirm-expression-of-all-six-med15-genes)
          * [Natural variation in <em>Med15</em> in <em>Aegilops tauschii</em>](#natural-variation-in-med15-in-aegilops-tauschii)
-         * [RNAseq coverage over <em>TaMed15.bD</em>](#rnaseq-coverage-over-tamed15bd)
+         * [RNAseq coverage over <em>TaMed15b.D</em>](#rnaseq-coverage-over-tamed15bd)
          * [Investigating the <em>Med15</em> gene family in <em>Bromus inermis</em>](#investigating-the-med15-gene-family-in-bromus-inermis)
       * [Protein annotation of <em>Med15b.D</em>](#protein-annotation-of-med15bd)
       * [Molecular evolution of <em>Med15</em> gene family](#molecular-evolution-of-med15-gene-family)
          * [Phylogenetic and diversity analysis of <em>Med15</em> gene family](#phylogenetic-and-diversity-analysis-of-med15-gene-family)
          * [dN/dS analysis of <em>Med15</em> gene family](#dnds-analysis-of-med15-gene-family)
-
+      * [RNAseq analysis of differentially expressed genes in Canthatch, NS1, and NS2](#rnaseq-analysis-of-differentially-expressed-genes-in-canthatch-ns1-and-ns2)
+         * [Quality control analysis of replicated RNAseq data set](#quality-control-analysis-of-replicated-rnaseq-data-set)
+         * [Alignment of RNAseq reads using kallisto](#alignment-of-rnaseq-reads-using-kallisto)
+         * [Alignment of RNAseq reads to <em>de novo</em> transcriptome assembly](#alignment-of-rnaseq-reads-to-de-novo-transcriptome-assembly)
+            * [<em>de novo</em> transcriptome assembly of Canthatch, NS1, and NS2](#de-novo-transcriptome-assembly-of-canthatch-ns1-and-ns2)
+         * [Mapping of reads using unambiguous mapping](#mapping-of-reads-using-unambiguous-mapping)
+         * [Competitive alignment of RNAseq reads to the sub-genomes of wheat](#competitive-alignment-of-rnaseq-reads-to-the-sub-genomes-of-wheat)
+         * [Manual evaluation of aligned reads to candidate induced/suppressed genes](#manual-evaluation-of-aligned-reads-to-candidate-inducedsuppressed-genes)
+         * [Mapping of reads using unambiguous mapping on the reference genome](#mapping-of-reads-using-unambiguous-mapping-on-the-reference-genome)
+         * [Differential expressed gene analysis of Canthatch, NS1, and NS2](#differential-expressed-gene-analysis-of-canthatch-ns1-and-ns2)
+      * [Time-course RNAseq analysis of differentially expressed genes in Canthatch, NS1, and NS2 in <em>Pgt</em>-inoculated and mock-inoculated treatments](#time-course-rnaseq-analysis-of-differentially-expressed-genes-in-canthatch-ns1-and-ns2-in-pgt-inoculated-and-mock-inoculated-treatments)
+         * [Trimming of reads using Trimmomatic](#trimming-of-reads-using-trimmomatic)
+         * [Alignment of RNAseq reads using kallisto](#alignment-of-rnaseq-reads-using-kallisto-1)
+         * [DESeq2 analysis of differentially expressed genes](#deseq2-analysis-of-differentially-expressed-genes)
+ 
 ## Defining the genetic interval encompassing *SuSr1*
 Our initial approach was to identify SNPs along the long arm of chromosome 7D in order to develop SNP markers that will be applied to the Canthatch x NS1 and Canthatch x NS2 doubled-haploid mapping populations. We used an approach that integrates multiple data sets including *de novo* assembly of flow sorted chromosomes of Canthatch, RNAseq data derived from Canthatch, NS1, and NS2, alignment-based SNP calling, and the physical assembly of chromosome 7D from the IWGSC (NRGene assembly).
 
